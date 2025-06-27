@@ -14,6 +14,7 @@ import 'package:nover/src/utils/translation.dart';
 import 'package:nover/main.dart';
 import 'coin_details_screen.dart';
 import 'package:nover/features/event_center/screens/event_center_screen.dart';
+import 'package:nover/features/author/screens/became_author_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -320,7 +321,19 @@ class ProfileScreen extends StatelessWidget {
           _buildMenuListItem(context, Remix.calendar_event_line, tl('eventCenter'), onSurfaceColor, subtleTextColor, dividerColor, trailing: _buildBadge(context, tl('freeCoins'), accentBadgeColor, Colors.white), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const EventCenterScreen()))),
           _buildMenuListItem(context, Remix.coupon_3_line, tl('myCoupons'), onSurfaceColor, subtleTextColor, dividerColor),
           _buildMenuListItem(context, Remix.archive_line, tl('myPosts'), onSurfaceColor, subtleTextColor, dividerColor),
-          _buildMenuListItem(context, Remix.quill_pen_line, tl('becomeAuthor'), onSurfaceColor, subtleTextColor, dividerColor, trailing: _buildBadge(context, tl('new'), primaryColor, onPrimaryColor)),
+          _buildMenuListItem(
+            context,
+            Remix.quill_pen_line,
+            tl('becomeAuthor'),
+            onSurfaceColor,
+            subtleTextColor,
+            dividerColor,
+            trailing: _buildBadge(context, tl('new'), primaryColor, onPrimaryColor),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const BecameAuthorScreen()),
+            ),
+          ),
           _buildMenuListItem(context, Remix.feedback_line, tl('feedback'), onSurfaceColor, subtleTextColor, dividerColor),
           _buildMenuListItem(context, Remix.settings_line, tl('settings'), onSurfaceColor, subtleTextColor, dividerColor, isLast: !isLoggedIn, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen()))),
         ],
