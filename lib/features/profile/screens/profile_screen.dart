@@ -124,8 +124,8 @@ class ProfileScreen extends StatelessWidget {
 
     final dicebearRepo = DicebearRepository();
     final colorScheme = theme.colorScheme;
-    final String fullName = userData['full_name'] ?? tl('user');
-    final String? userAvatarUrl = userData['avatar_url'];
+    final String fullName = userData['fullName'] ?? tl('user');
+    final String? userAvatarUrl = userData['avatarUrl'];
 
     Widget avatarWidget;
     if (userAvatarUrl != null && userAvatarUrl.isNotEmpty) {

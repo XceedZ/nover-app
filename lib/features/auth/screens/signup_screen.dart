@@ -131,7 +131,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       child: _isLoading
                           ? SizedBox(height: responsiveFontSize(context, 20), width: responsiveFontSize(context, 20), child: CircularProgressIndicator(strokeWidth: 2.5, color: colorScheme.onPrimary))
-                          : Text(tl('register'), style: AppFonts.titleMedium()?.copyWith(fontWeight: FontWeight.bold)),
+                          : Text(tl('signup'), style: AppFonts.titleMedium()?.copyWith(fontWeight: FontWeight.bold)),
                     ),
                   ),
                   SizedBox(height: responsiveFontSize(context, 40)),

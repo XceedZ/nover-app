@@ -13,9 +13,9 @@ class Bank {
 
   factory Bank.fromJson(Map<String, dynamic> json) {
     return Bank(
-      bankId: json['bank_id'] as int,
-      bankName: json['bank_name'] as String,
-      bankCode: json['bank_code'] as String,
+      bankId: json['bankId'] as int,
+      bankName: json['bankName'] as String,
+      bankCode: json['bankCode'] as String,
     );
   }
 
@@ -27,7 +27,6 @@ class Bank {
   @override
   int get hashCode => bankId.hashCode;
 
-  // --- TAMBAHKAN INI ---
   // Method ini akan dipanggil oleh dropdown_flutter untuk menampilkan nama bank
   @override
   String toString() {

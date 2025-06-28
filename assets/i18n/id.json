@@ -112,7 +112,7 @@
     "fullName": "Nama Lengkap",
     "email": "Email",
     "alreadyHaveAcc": "Sudah memiliki akun?",
-    "in": "Login",
+    "in": "Masuk",
     "fullNameRequired": "Nama lengkap harus diisi.",
     "emailRequired": "Email harus diisi.",
     "success": "Berhasil",
@@ -143,7 +143,9 @@
     "validationRequired": "Kolom ini tidak boleh kosong",
     "selectBank": "Pilih Bank",
     "penName": "Nama Pena",
-    "searchBank": "Cari Bank"
+    "searchBank": "Cari Bank",
+    "alreadyAuthor": "Selamat! Anda sudah menjadi penulis Nover",
+    "alreadyAuthorDesc": "Mulai tulis dan publikasikan cerita Anda sekarang."
   },
   "error": {
     "invalid_credentials": "Login gagal. Periksa kembali nama pengguna dan kata sandi Anda.",

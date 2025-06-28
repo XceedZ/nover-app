@@ -5,10 +5,8 @@ import 'package:nover/src/constants/api_constants.dart';
 import 'package:nover/src/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nover/src/utils/translation.dart';
-import 'dart:developer' as developer; // Import untuk logging yang lebih baik
-
-const String _tokenKey = 'auth_token';
-const String _userKey = 'user_data';
+import 'package:nover/src/constants/constants.dart';
+import 'dart:developer' as developer;
 
 class AuthRepository {
   final ApiService _apiService;
@@ -40,8 +38,8 @@ class AuthRepository {
         if (token != null && userData != null) {
           _apiService.setAuthToken(token);
           final prefs = await SharedPreferences.getInstance();
-          await prefs.setString('auth_token', token);
-          await prefs.setString('user_data', jsonEncode(userData));
+          await prefs.setString(tokenSessionKey, token);
+          await prefs.setString(userSessionKey, jsonEncode(userData));
 
           return userData as Map<String, dynamic>;
         } else {
@@ -70,7 +68,7 @@ class AuthRepository {
     required String password,
   }) async {
     final registerData = {
-      'full_name': fullName,
+      'fullName': fullName,
       'username': username,
       'email': email,
       'password': password,
@@ -100,9 +98,8 @@ class AuthRepository {
 
   Future<Map<String, dynamic>?> getCurrentUser() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString(_tokenKey);
-    final userDataString = prefs.getString(_userKey);
-
+    final token = prefs.getString(tokenSessionKey);
+    final userDataString = prefs.getString(userSessionKey);
     if (token != null && userDataString != null) {
       _apiService.setAuthToken(token);
       return jsonDecode(userDataString) as Map<String, dynamic>;
@@ -112,8 +109,8 @@ class AuthRepository {
 
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_tokenKey);
-    await prefs.remove(_userKey);
+    await prefs.remove(tokenSessionKey);
+    await prefs.remove(userSessionKey);
     _apiService.clearAuthToken();
   }
 }

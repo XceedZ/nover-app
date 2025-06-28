@@ -140,7 +140,9 @@
     "validationRequired": "This field cannot be empty",
     "selectBank": "Select Bank",
     "penName": "Pen Name",
-    "searchBank": "Search Bank"
+    "searchBank": "Search Bank",
+    "alreadyAuthor": "Congratulations! You're now a Nover Author",
+    "alreadyAuthorDesc": "Start writing and publishing your story now."
   },
   "error": {
     "invalid_credentials": "Login failed. Please check your username and password.",

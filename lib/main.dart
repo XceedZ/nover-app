@@ -1,12 +1,12 @@
 // lib/main.dart
-import 'dart:developer' as developer; // Import untuk logging yang lebih baik
+import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:nover/features/auth/screens/welcome_screen.dart';
-// UBAH: Memperbaiki kesalahan ketik dari 'package.' menjadi 'package:'
 import 'package:nover/features/home/screens/home_page.dart';
 import 'package:nover/src/repositories/auth_repository.dart';
+import 'package:nover/src/services/navigation_service.dart'; // Import untuk kunci navigasi
 import 'package:nover/src/theme/theme_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -25,7 +25,7 @@ void main() async {
     // 1. Pastikan semua binding siap sebelum menjalankan kode async
     WidgetsFlutterBinding.ensureInitialized();
 
-    // 2. Konfigurasi env ditangani oleh argumen build.
+    // 2. Konfigurasi env sekarang ditangani oleh argumen build.
 
     final prefs = await SharedPreferences.getInstance();
 
@@ -86,6 +86,8 @@ class MyApp extends StatelessWidget {
       valueListenable: themeProvider,
       builder: (context, currentMode, child) {
         return MaterialApp(
+          // UBAH: Menambahkan kunci navigasi global
+          navigatorKey: NavigationService.navigatorKey,
           key: ValueKey(localizationDelegate.currentLocale.toString()),
           title: 'Nover App',
           debugShowCheckedModeBanner: false,
@@ -97,9 +99,10 @@ class MyApp extends StatelessWidget {
           ],
           supportedLocales: localizationDelegate.supportedLocales,
           locale: localizationDelegate.currentLocale,
-          theme: lightTheme,
-          darkTheme: darkTheme,
+          theme: lightTheme, // Pastikan Anda memiliki variabel lightTheme
+          darkTheme: darkTheme, // Pastikan Anda memiliki variabel darkTheme
           themeMode: currentMode,
+          // Aplikasi selalu dimulai dari MyHomePage
           home: const MyHomePage(),
         );
       },

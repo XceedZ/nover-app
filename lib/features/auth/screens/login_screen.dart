@@ -40,14 +40,14 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() { _isLoading = true; });
 
     try {
-      // Baris ini sekarang akan menerima Map<String, dynamic>, bukan void
+      // Fungsi login sekarang mengembalikan Map<String, dynamic> dengan data pengguna
       final userData = await _authRepository.login(
         username: _usernameController.text,
         password: _passwordController.text,
       );
 
       if (mounted) {
-        // Baris ini sekarang valid karena userData tidak lagi void
+        // Simpan data pengguna yang sudah dalam format camelCase
         authNotifier.value = userData;
 
         Navigator.of(context).pushAndRemoveUntil(

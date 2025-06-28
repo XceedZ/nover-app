@@ -2,12 +2,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:nover/src/models/bank.dart';
+import 'package:nover/src/repositories/author_repository.dart';
 import 'package:nover/src/repositories/bank_repository.dart';
-import 'package:nover/src/utils/app_fonts.dart'; // <-- PASTIKAN IMPORT INI ADA
+import 'package:nover/src/utils/app_fonts.dart';
 import 'package:nover/src/utils/translation.dart';
 import 'package:nover/src/utils/ui_helpers.dart';
 import 'package:remixicon/remixicon.dart';
-import 'package:nover/src/widgets/custom_bank_dropdown.dart';
+import 'package:nover/features/author/widgets/custom_bank_dropdown.dart';
+import 'package:nover/src/widgets/custom_snackbar.dart';
 
 class AuthorApplicationBottomSheet extends StatefulWidget {
   const AuthorApplicationBottomSheet({super.key});
@@ -20,13 +22,14 @@ class AuthorApplicationBottomSheet extends StatefulWidget {
 class _AuthorApplicationBottomSheetState
     extends State<AuthorApplicationBottomSheet> {
   final _formKey = GlobalKey<FormState>();
+  final _authorRepository = AuthorRepository();
   late Future<List<Bank>> _bankListFuture;
   Bank? _selectedBank;
   bool _isLoading = false;
 
   final _penNameController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _portfolioLinkController = TextEditingController();
+  final _instagramController = TextEditingController();
   final _accountNumberController = TextEditingController();
 
   @override
@@ -39,49 +42,50 @@ class _AuthorApplicationBottomSheetState
   void dispose() {
     _penNameController.dispose();
     _phoneController.dispose();
-    _portfolioLinkController.dispose();
+    _instagramController.dispose();
     _accountNumberController.dispose();
     super.dispose();
   }
 
   Future<void> _submitApplication() async {
-    if (_formKey.currentState!.validate() && _selectedBank != null) {
-      setState(() {
-        _isLoading = true;
-      });
+    // Validasi form, termasuk dropdown bank.
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
-      final applicationData = {
-        'penName': _penNameController.text,
-        'phone': _phoneController.text,
-        'portfolio': _portfolioLinkController.text,
-        'bankId': _selectedBank?.bankId,
-        'accountNumber': _accountNumberController.text,
-      };
+    setState(() => _isLoading = true);
 
-      print('Data Pendaftaran: $applicationData');
-
-      await Future.delayed(const Duration(seconds: 2));
+    try {
+      await _authorRepository.requestAuthorStatus(
+        accountNumber: _accountNumberController.text,
+        bankId: _selectedBank!.bankId, // _selectedBank dijamin tidak null karena sudah divalidasi
+        instagram: _instagramController.text,
+        penName: _penNameController.text,
+        phone: _phoneController.text,
+      );
 
       if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(tl('author.form.successMessage')),
-            backgroundColor: Colors.green,
-          ),
+        Navigator.pop(context); // Tutup bottom sheet
+        // Tampilkan notifikasi sukses menggunakan helper
+        AppSnackbar.showSuccess(
+          context,
+          title: tl('success'),
+          message: tl('signupSuccess'), // Ganti dengan key yang lebih sesuai jika ada
         );
       }
-
-      setState(() {
-        _isLoading = false;
-      });
-    } else if (_selectedBank == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(tl('bankRequired')),
-          backgroundColor: Colors.red,
-        ),
-      );
+    } catch (e) {
+      if (mounted) {
+        // Tampilkan notifikasi error menggunakan helper
+        AppSnackbar.showError(
+          context,
+          title: tl('error'),
+          message: e.toString(),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -113,7 +117,6 @@ class _AuthorApplicationBottomSheetState
                 ),
               ),
               const SizedBox(height: 16),
-              // --- PERUBAHAN: Menggunakan AppFonts ---
               Text(
                 tl('formTitle'),
                 style: AppFonts.titleLarge(color: theme.colorScheme.onSurface),
@@ -124,52 +127,49 @@ class _AuthorApplicationBottomSheetState
                 style: AppFonts.titleSmall(color: theme.textTheme.bodySmall?.color),
               ),
               const SizedBox(height: 24),
-
               _buildTextField(
-                  controller: _penNameController,
-                  labelText: tl('penName'),
-                  icon: Remix.pen_nib_line),
+                controller: _penNameController,
+                labelText: tl('penName'),
+                icon: Remix.pen_nib_line,
+              ),
               const SizedBox(height: 16),
               _buildTextField(
-                  controller: _phoneController,
-                  labelText: tl('phone'),
-                  icon: Remix.phone_line,
-                  keyboardType: TextInputType.phone),
+                controller: _phoneController,
+                labelText: tl('phone'),
+                icon: Remix.phone_line,
+                keyboardType: TextInputType.phone,
+              ),
               const SizedBox(height: 16),
               _buildTextField(
-                  controller: _portfolioLinkController,
-                  labelText: tl('instagram'),
-                  icon: Remix.instagram_line),
+                controller: _instagramController,
+                labelText: tl('instagram'),
+                icon: Remix.instagram_line,
+              ),
               const SizedBox(height: 24),
               _buildDividerWithText(context: context, text: tl('paymentInfo')),
               const SizedBox(height: 16),
-
               FutureBuilder<List<Bank>>(
                 future: _bankListFuture,
                 builder: (context, snapshot) {
-                  bool isLoading =
-                      snapshot.connectionState == ConnectionState.waiting;
+                  bool isLoading = snapshot.connectionState == ConnectionState.waiting;
                   bool isError = snapshot.hasError;
 
                   return CustomBankDropdown(
                     labelText: tl('bankName'),
-                    hintText: isLoading
-                        ? 'Memuat bank...'
-                        : isError
-                        ? 'Gagal memuat'
-                        : tl('bankName'),
+                    hintText: isLoading ? tl('loadingBank') : isError ? tl('loadBankFailed') : tl('selectBank'),
                     value: _selectedBank,
                     items: snapshot.data ?? [],
                     isDisabled: isLoading || isError,
-                    onChanged: (Bank selectedBank) {
-                      setState(() {
-                        _selectedBank = selectedBank;
-                      });
+                    onChanged: (Bank? selectedBank) {
+                      if (selectedBank != null) {
+                        setState(() {
+                          _selectedBank = selectedBank;
+                        });
+                      }
                     },
                   );
                 },
               ),
-
               const SizedBox(height: 16),
               _buildTextField(
                 controller: _accountNumberController,
@@ -186,8 +186,7 @@ class _AuthorApplicationBottomSheetState
                     backgroundColor: theme.colorScheme.primary,
                     foregroundColor: theme.colorScheme.onPrimary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: _isLoading
                       ? const SizedBox(
@@ -195,13 +194,11 @@ class _AuthorApplicationBottomSheetState
                       height: 24,
                       child: CircularProgressIndicator(
                         color: Colors.white,
-                        strokeWidth: 2,
+                        strokeWidth: 2.5,
                       ))
                       : Text(
                     tl('submitForm'),
-                    // --- PERUBAHAN: Menggunakan AppFonts ---
-                    style: AppFonts.titleMedium(color: theme.colorScheme.onPrimary)
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                    style: AppFonts.titleMedium(color: theme.colorScheme.onPrimary)?.copyWith(fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
@@ -231,13 +228,10 @@ class _AuthorApplicationBottomSheetState
         }
         return null;
       },
-      // --- PERUBAHAN: Menggunakan AppFonts ---
       style: AppFonts.titleMedium(color: colorScheme.onSurface),
       decoration: InputDecoration(
         labelText: labelText,
-        // --- PERUBAHAN: Menggunakan AppFonts ---
-        labelStyle:
-        AppFonts.titleMedium(color: colorScheme.onSurface.withOpacity(0.6)),
+        labelStyle: AppFonts.titleMedium(color: colorScheme.onSurface.withOpacity(0.6)),
         filled: true,
         fillColor: colorScheme.surfaceVariant,
         prefixIcon: Icon(icon, color: colorScheme.onSurface.withOpacity(0.6)),
@@ -253,23 +247,17 @@ class _AuthorApplicationBottomSheetState
     );
   }
 
-  Widget _buildDividerWithText(
-      {required BuildContext context, required String text}) {
+  Widget _buildDividerWithText({required BuildContext context, required String text}) {
     final theme = Theme.of(context);
     final textColor = theme.textTheme.bodySmall?.color?.withOpacity(0.8);
     return Row(
       children: [
-        Expanded(
-            child: Divider(
-                color: theme.dividerColor.withOpacity(0.5), thickness: 1)),
+        Expanded(child: Divider(color: theme.dividerColor.withOpacity(0.5), thickness: 1)),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12.0),
-          // --- PERUBAHAN: Menggunakan AppFonts ---
           child: Text(text, style: AppFonts.titleSmall(color: textColor)?.copyWith(fontSize: 12)),
         ),
-        Expanded(
-            child: Divider(
-                color: theme.dividerColor.withOpacity(0.5), thickness: 1)),
+        Expanded(child: Divider(color: theme.dividerColor.withOpacity(0.5), thickness: 1)),
       ],
     );
   }

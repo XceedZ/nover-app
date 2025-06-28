@@ -10,5 +10,7 @@ class ApiConstants {
 
   // Endpoint untuk fitur v1
   static const String getBanksEndpoint = 'v1/bank/get';
+  static const String requestAuthorEndpoint = '/v1/user/request-author';
+  static const String getAuthorStatusEndpoint = '/v1/user/author-status';
 
 }
