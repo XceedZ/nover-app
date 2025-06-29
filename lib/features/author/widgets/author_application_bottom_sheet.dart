@@ -65,7 +65,7 @@ class _AuthorApplicationBottomSheetState
       );
 
       if (mounted) {
-        Navigator.pop(context); // Tutup bottom sheet
+        Navigator.pop(context, 'submitted'); // Tutup bottom sheet dan kirim sinyal
         // Tampilkan notifikasi sukses menggunakan helper
         AppSnackbar.showSuccess(
           context,
@@ -119,11 +119,13 @@ class _AuthorApplicationBottomSheetState
               const SizedBox(height: 16),
               Text(
                 tl('formTitle'),
-                style: AppFonts.titleLarge(color: theme.colorScheme.onSurface),
+                // UBAH: Menambahkan fontWeight.bold
+                style: AppFonts.titleLarge(color: theme.colorScheme.onSurface)?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
                 tl('formSub'),
+                // UBAH: Menggunakan warna yang konsisten untuk deskripsi
                 style: AppFonts.titleSmall(color: theme.textTheme.bodySmall?.color),
               ),
               const SizedBox(height: 24),
@@ -156,7 +158,7 @@ class _AuthorApplicationBottomSheetState
 
                   return CustomBankDropdown(
                     labelText: tl('bankName'),
-                    hintText: isLoading ? tl('loadingBank') : isError ? tl('loadBankFailed') : tl('selectBank'),
+                    hintText: isLoading ? tl('loadingBank') : isError ? tl('loadBankFailed') : tl('bankName'),
                     value: _selectedBank,
                     items: snapshot.data ?? [],
                     isDisabled: isLoading || isError,
@@ -167,6 +169,7 @@ class _AuthorApplicationBottomSheetState
                         });
                       }
                     },
+
                   );
                 },
               ),

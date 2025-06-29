@@ -82,7 +82,7 @@ ThemeData darkTheme = ThemeData(
     surface: const Color(0xFF1E1E1E),
     onBackground: Colors.white.withOpacity(0.87),
     onSurface: Colors.white.withOpacity(0.87),
-    error: Colors.redAccent.shade100, // Sedikit lebih terang untuk tema gelap
+    error: Colors.red.shade600, // Sedikit lebih terang untuk tema gelap
     onError: Colors.black,
     // Warna tambahan yang mungkin berguna
     primaryContainer: Colors.amber.shade900.withOpacity(0.5),

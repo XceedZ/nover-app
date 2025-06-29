@@ -7,8 +7,7 @@ import 'package:nover/src/utils/ui_helpers.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:nover/src/utils/translation.dart';
 import 'package:nover/src/utils/app_fonts.dart';
-import 'package:snackify/snackify.dart';
-import 'package:snackify/enums/snack_enums.dart';
+import 'package:nover/src/widgets/custom_snackbar.dart'; // <-- IMPORT HELPER BARU
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -50,14 +49,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
       );
 
       if (mounted) {
-        Snackify.show(
-          context: context,
-          type: SnackType.success,
-          title: Text(tl('success'), style: AppFonts.titleMedium(color: Theme.of(context).colorScheme.onPrimary)),
-          subtitle: Text(tl('signupSuccess'), style: AppFonts.titleSmall(color: Theme.of(context).colorScheme.onPrimary)),
-          position: SnackPosition.top,
+        // UBAH: Menggunakan AppSnackbar
+        AppSnackbar.showSuccess(
+          context,
+          title: tl('signupSuccessTitle'),
+          message: tl('signupSuccessSubtitle'),
         );
-        Future.delayed(const Duration(seconds: 1), () {
+
+        Future.delayed(const Duration(seconds: 2), () {
           if (mounted) {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => const LoginScreen()),
@@ -67,13 +66,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
       }
     } catch (e) {
       if (mounted) {
-        Snackify.show(
-          context: context,
-          type: SnackType.error,
-          title: Text(tl('error'), style: AppFonts.titleMedium(color: Theme.of(context).colorScheme.onError)?.copyWith(fontWeight: FontWeight.bold)),
-          subtitle: Text(e.toString(), style: AppFonts.titleSmall(color: Theme.of(context).colorScheme.onError), maxLines: 2, overflow: TextOverflow.ellipsis),
-          position: SnackPosition.top,
-          duration: const Duration(seconds: 4),
+        // UBAH: Menggunakan AppSnackbar
+        AppSnackbar.showError(
+          context,
+          message: e.toString(),
         );
       }
     } finally {
@@ -85,6 +81,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // ... UI tidak berubah ...
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 

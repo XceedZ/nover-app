@@ -15,6 +15,7 @@ import 'package:nover/main.dart';
 import 'coin_details_screen.dart';
 import 'package:nover/features/event_center/screens/event_center_screen.dart';
 import 'package:nover/features/author/screens/became_author_screen.dart';
+import 'package:nover/features/posts/screens/my_posts_screen.dart'; // <-- IMPORT BARU
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -24,21 +25,17 @@ class ProfileScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    // Definisi variabel warna persis seperti struktur asli Anda
     final onSurfaceColor = colorScheme.onSurface;
     final subtleTextColor = theme.textTheme.bodySmall?.color ?? Colors.grey.shade600;
     final balanceCardBackgroundColor = theme.brightness == Brightness.light
         ? Colors.grey.shade50
         : colorScheme.surfaceVariant.withOpacity(0.5);
-
-    // Mengembalikan warna warning ke skema oranye asli Anda
     final warningTextColor = theme.brightness == Brightness.light
         ? Colors.orange.shade800
         : Colors.orange.shade300;
     final warningBackgroundColor = theme.brightness == Brightness.light
         ? Colors.orange.shade100
         : Colors.orange.shade900.withOpacity(0.5);
-
     final coinsIconColor = Colors.orange.shade600;
     final bonusCoinsIconColor = Colors.lightBlue.shade500;
     final dividerColor = theme.dividerColor;
@@ -303,13 +300,11 @@ class ProfileScreen extends StatelessWidget {
   }
 
   Widget _buildMenuListContainer(BuildContext context, Color onSurfaceColor, Color subtleTextColor, Color accentBadgeColor, Color primaryColor, Color onPrimaryColor, Color menuContainerBgColor, List<BoxShadow> boxShadow, Color dividerColor, bool isLoggedIn) {
-    // Menambahkan AuthRepository untuk fungsi logout
     final AuthRepository authRepository = AuthRepository();
 
     Future<void> handleLogout() async {
       await authRepository.logout();
-      authNotifier.value = null; // Ini akan memicu ValueListenableBuilder untuk rebuild
-      // Ganti navigasi agar lebih robust
+      authNotifier.value = null;
       Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const WelcomeScreen()), (route) => false);
     }
@@ -320,7 +315,22 @@ class ProfileScreen extends StatelessWidget {
         children: [
           _buildMenuListItem(context, Remix.calendar_event_line, tl('eventCenter'), onSurfaceColor, subtleTextColor, dividerColor, trailing: _buildBadge(context, tl('freeCoins'), accentBadgeColor, Colors.white), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const EventCenterScreen()))),
           _buildMenuListItem(context, Remix.coupon_3_line, tl('myCoupons'), onSurfaceColor, subtleTextColor, dividerColor),
-          _buildMenuListItem(context, Remix.archive_line, tl('myPosts'), onSurfaceColor, subtleTextColor, dividerColor),
+          // --- PERUBAHAN DI SINI ---
+          _buildMenuListItem(
+            context,
+            Remix.archive_line,
+            tl('myPosts'),
+            onSurfaceColor,
+            subtleTextColor,
+            dividerColor,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const MyPostsScreen()),
+              );
+            },
+          ),
+          // ------------------------
           _buildMenuListItem(
             context,
             Remix.quill_pen_line,
@@ -368,7 +378,7 @@ class ProfileScreen extends StatelessWidget {
                 child: Text(title, style: AppFonts.titleMedium(color: onSurfaceColor).copyWith(fontSize: responsiveFontSize(context, 14.5))),
               ),
               if (trailing != null) ...[trailing, SizedBox(width: responsiveFontSize(context, 8))],
-              if (onTap != null) // Tampilkan panah jika ada onTap
+              if (onTap != null)
                 Icon(Remix.arrow_right_s_line, size: responsiveFontSize(context, 20), color: subtleTextColor),
             ],
           ),

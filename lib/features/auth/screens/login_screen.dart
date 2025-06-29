@@ -9,8 +9,7 @@ import 'package:nover/src/utils/ui_helpers.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:nover/src/utils/translation.dart';
 import 'package:nover/src/utils/app_fonts.dart';
-import 'package:snackify/snackify.dart';
-import 'package:snackify/enums/snack_enums.dart';
+import 'package:nover/src/widgets/custom_snackbar.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -40,16 +39,16 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() { _isLoading = true; });
 
     try {
-      // Fungsi login sekarang mengembalikan Map<String, dynamic> dengan data pengguna
       final userData = await _authRepository.login(
         username: _usernameController.text,
         password: _passwordController.text,
       );
 
       if (mounted) {
-        // Simpan data pengguna yang sudah dalam format camelCase
         authNotifier.value = userData;
 
+        // UBAH: Navigasi ini lebih aman dan menghapus semua rute sebelumnya.
+        // Tidak perlu pop manual. Ini akan menyelesaikan error 'bool is not a subtype of Null'.
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const MyHomePage()),
               (Route<dynamic> route) => false,
@@ -57,22 +56,9 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
-        Snackify.show(
-          context: context,
-          type: SnackType.error,
-          title: Text(
-            tl('error'),
-            style: AppFonts.titleMedium(color: Theme.of(context).colorScheme.onError)
-                ?.copyWith(fontWeight: FontWeight.bold),
-          ),
-          subtitle: Text(
-            e.toString(),
-            style: AppFonts.titleSmall(color: Theme.of(context).colorScheme.onError),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-          position: SnackPosition.top,
-          duration: const Duration(seconds: 4),
+        AppSnackbar.showError(
+          context,
+          message: e.toString(),
         );
       }
     } finally {

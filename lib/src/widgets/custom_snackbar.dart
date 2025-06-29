@@ -2,34 +2,49 @@
 
 import 'package:flutter/material.dart';
 import 'package:nover/src/utils/app_fonts.dart';
+import 'package:nover/src/utils/translation.dart';
 import 'package:snackify/snackify.dart';
 import 'package:snackify/enums/snack_enums.dart';
 
-/// Kelas helper untuk menampilkan notifikasi Snackify yang konsisten di seluruh aplikasi.
+/// Kelas helper untuk menampilkan notifikasi Snackify yang konsisten.
 class AppSnackbar {
   // Private constructor agar kelas ini tidak bisa di-instantiate.
   AppSnackbar._();
 
-  /// Menampilkan notifikasi sukses.
+  /// Menampilkan notifikasi sukses dengan gaya default.
   static void showSuccess(BuildContext context, {String? title, required String message}) {
     Snackify.show(
       context: context,
       type: SnackType.success,
-      // Gunakan AppFonts dan atur warna teks menjadi putih untuk kontras
-      title: title != null ? Text(title, style: AppFonts.titleMedium(color: Colors.white)?.copyWith(fontWeight: FontWeight.bold)) : null,
-      subtitle: Text(message, style: AppFonts.titleSmall(color: Colors.white)),
+      // Menggunakan AppFonts dan memastikan teks berwarna putih untuk kontras
+      title: Text(
+        title ?? tl('success'),
+        style: AppFonts.titleMedium(color: Colors.white)?.copyWith(fontWeight: FontWeight.bold),
+      ),
+      subtitle: Text(
+        message,
+        style: AppFonts.titleSmall(color: Colors.white),
+      ),
       position: SnackPosition.top,
     );
   }
 
-  /// Menampilkan notifikasi error.
+  /// Menampilkan notifikasi error dengan gaya default.
   static void showError(BuildContext context, {String? title, required String message}) {
     Snackify.show(
       context: context,
       type: SnackType.error,
-      // Gunakan AppFonts dan atur warna teks menjadi putih untuk kontras
-      title: title != null ? Text(title, style: AppFonts.titleMedium(color: Colors.white)?.copyWith(fontWeight: FontWeight.bold)) : null,
-      subtitle: Text(message, style: AppFonts.titleSmall(color: Colors.white), maxLines: 3, overflow: TextOverflow.ellipsis),
+      // Menggunakan AppFonts dan memastikan teks berwarna putih untuk kontras
+      title: Text(
+        title ?? tl('error'),
+        style: AppFonts.titleMedium(color: Colors.white)?.copyWith(fontWeight: FontWeight.bold),
+      ),
+      subtitle: Text(
+        message,
+        style: AppFonts.titleSmall(color: Colors.white),
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
+      ),
       position: SnackPosition.top,
       duration: const Duration(seconds: 4), // Error ditampilkan lebih lama
     );

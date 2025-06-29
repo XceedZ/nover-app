@@ -1,7 +1,7 @@
 // lib/src/services/api_service.dart
 import 'package:dio/dio.dart';
 import 'package:nover/src/constants/api_constants.dart';
-import 'package:nover/src/services/logout_service.dart'; // Import layanan logout
+import 'package:nover/src/services/logout_service.dart';
 
 class ApiService {
   final Dio _dio;
@@ -20,28 +20,28 @@ class ApiService {
       },
     );
 
-    // --- INTERCEPTOR UNTUK MENANGANI ERROR 401 SECARA GLOBAL ---
     _dio.interceptors.add(
       InterceptorsWrapper(
         onError: (DioException err, handler) async {
-          // Periksa apakah error adalah response dari server dengan status code 401.
           if (err.response?.statusCode == 401) {
-            // Jika ya, panggil layanan logout.
+            // Lakukan logout
             await LogoutService.perform();
 
-            // Kita bisa hentikan error di sini agar tidak memicu notifikasi Snackify
-            // karena aplikasi sudah akan berpindah halaman.
-            // Cukup kembalikan response dummy untuk menyelesaikan rantai promise.
-            return handler.resolve(Response(requestOptions: err.requestOptions, data: 'Logged out due to 401'));
+            // UBAH: Jangan teruskan error 401. Buat response 'dummy' untuk
+            // menghentikan rantai error di sini, karena navigasi sudah ditangani.
+            // Ini akan mencegah 'catch' di repository dan UI dieksekusi untuk error 401.
+            return handler.resolve(Response(
+              requestOptions: err.requestOptions,
+              data: {'message': 'Session expired and logged out.'},
+              statusCode: 200, // Anggap sudah ditangani
+            ));
           }
-          // Jika error bukan 401, biarkan ia berlanjut untuk ditangani oleh repository.
+          // Jika error lain, teruskan seperti biasa
           return handler.next(err);
         },
       ),
     );
-    // -------------------------------------------------------------
 
-    // Interceptor untuk logging tetap berguna untuk debugging.
     _dio.interceptors.add(LogInterceptor(
       requestHeader: true,
       requestBody: true,
@@ -53,7 +53,6 @@ class ApiService {
   static final ApiService _instance = ApiService._();
   factory ApiService() => _instance;
 
-  // ... sisa metode (get, post, put, delete) tidak ada perubahan ...
   Future<Response> get(String endpoint, {Map<String, dynamic>? queryParameters}) async {
     try {
       final response = await _dio.get(endpoint, queryParameters: queryParameters);
@@ -84,6 +83,18 @@ class ApiService {
   Future<Response> delete(String endpoint) async {
     try {
       final response = await _dio.delete(endpoint);
+      return response;
+    } on DioException {
+      rethrow;
+    }
+  }
+
+  Future<Response> patch(
+      String endpoint, {
+        Map<String, dynamic>? data,
+      }) async {
+    try {
+      final response = await _dio.patch(endpoint, data: data);
       return response;
     } on DioException {
       rethrow;

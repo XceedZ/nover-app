@@ -1,7 +1,6 @@
 // lib/features/author/screens/became_author_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:nover/main.dart';
 import 'package:nover/src/repositories/author_repository.dart';
 import 'package:nover/src/utils/translation.dart';
@@ -49,9 +48,9 @@ class _BecameAuthorScreenState extends State<BecameAuthorScreen> {
         ),
         title: Text(
           tl('becomeAuthor'),
-          style: AppFonts.titleLarge(color: primaryTextColor)?.copyWith(
+          // UBAH: Menggunakan style AppBar yang baru dan konsisten
+          style: AppFonts.appBarTitle(color: primaryTextColor)?.copyWith(
             fontSize: responsiveFontSize(context, 18),
-            fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
@@ -63,16 +62,7 @@ class _BecameAuthorScreenState extends State<BecameAuthorScreen> {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  snapshot.error.toString(),
-                  textAlign: TextAlign.center,
-                  style: AppFonts.titleMedium(color: theme.colorScheme.error),
-                ),
-              ),
-            );
+            return const SizedBox.shrink();
           }
           final bool isAuthor = snapshot.data?['isAuthor'] ?? false;
 
@@ -218,7 +208,6 @@ class _BecameAuthorScreenState extends State<BecameAuthorScreen> {
                 SizedBox(height: responsiveFontSize(context, 4)),
                 Text(
                   tl('alreadyAuthorDesc'),
-                  // UBAH: Menggunakan warna yang sama dengan deskripsi lain
                   style: AppFonts.titleSmall(color: theme.textTheme.bodySmall?.color)?.copyWith(height: 1.4),
                 ),
               ],
@@ -257,9 +246,15 @@ class _BecameAuthorScreenState extends State<BecameAuthorScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: AppFonts.titleMedium(color: theme.colorScheme.onSurface)?.copyWith(fontWeight: FontWeight.bold, fontSize: responsiveFontSize(context, 14.5))),
+              Text(
+                title,
+                style: AppFonts.titleMedium(color: theme.colorScheme.onSurface)?.copyWith(fontWeight: FontWeight.bold, fontSize: responsiveFontSize(context, 14.5)),
+              ),
               SizedBox(height: responsiveFontSize(context, 4)),
-              Text(subtitle, style: AppFonts.titleSmall(color: theme.textTheme.bodySmall?.color)?.copyWith(fontSize: responsiveFontSize(context, 13), height: 1.5)),
+              Text(
+                subtitle,
+                style: AppFonts.titleSmall(color: theme.textTheme.bodySmall?.color)?.copyWith(fontSize: responsiveFontSize(context, 13), height: 1.5),
+              ),
             ],
           ),
         ),

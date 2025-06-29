@@ -1,7 +1,12 @@
+// lib/features/home/widgets/home_top_bar.dart
+
+import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
-import 'package:nover/src/utils/ui_helpers.dart'; // <-- Impor responsiveFontSize dari utilitas
+import 'package:nover/src/utils/ui_helpers.dart';
 import 'package:remixicon/remixicon.dart';
-import 'package:nover/features/search/screens/search_screen.dart'; // Sesuaikan path jika perlu
+import 'package:nover/features/search/screens/search_screen.dart';
+import 'package:nover/features/notifications/screens/notification_screen.dart';
+import 'package:nover/src/utils/translation.dart';
 
 class HomeTopBar extends StatefulWidget implements PreferredSizeWidget {
   const HomeTopBar({super.key});
@@ -10,48 +15,10 @@ class HomeTopBar extends StatefulWidget implements PreferredSizeWidget {
   State<HomeTopBar> createState() => _HomeTopBarState();
 
   @override
-  // Gunakan nilai tetap atau kToolbarHeight untuk stabilitas
-  // Tinggi AppBar sebenarnya akan diatur oleh toolbarHeight di dalam build State
-  // atau default Flutter jika tidak diset. Ini untuk kontrak PreferredSizeWidget.
-  Size get preferredSize => const Size.fromHeight(60.0); // Contoh: tinggi 60
+  Size get preferredSize => const Size.fromHeight(60.0);
 }
 
 class _HomeTopBarState extends State<HomeTopBar> {
-  // State untuk search (jika Anda mengembalikan fungsionalitas search di sini nanti)
-  // bool _isSearching = false;
-  // final TextEditingController _searchController = TextEditingController();
-  // final FocusNode _searchFocusNode = FocusNode();
-
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   _searchController.addListener(() {
-  //     if (mounted) {
-  //       setState(() {});
-  //     }
-  //   });
-  // }
-
-  // @override
-  // void dispose() {
-  //   _searchController.dispose();
-  //   _searchFocusNode.dispose();
-  //   super.dispose();
-  // }
-
-  // void _toggleSearch() {
-  //   setState(() {
-  //     _isSearching = !_isSearching;
-  //     if (_isSearching) {
-  //       Future.delayed(const Duration(milliseconds: 50), () {
-  //         if (mounted) _searchFocusNode.requestFocus();
-  //       });
-  //     } else {
-  //       _searchController.clear();
-  //       FocusScope.of(context).unfocus();
-  //     }
-  //   });
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -59,22 +26,14 @@ class _HomeTopBarState extends State<HomeTopBar> {
     ColorScheme colorScheme = theme.colorScheme;
     AppBarTheme appBarTheme = theme.appBarTheme;
 
-    // Warna berdasarkan tema
     Color appBarBackgroundColor = appBarTheme.backgroundColor ?? colorScheme.surface;
     Color iconColor = appBarTheme.foregroundColor ?? colorScheme.onSurface;
     Color surfaceTintColor = appBarTheme.surfaceTintColor ?? appBarBackgroundColor;
     double elevation = appBarTheme.elevation ?? 0.5;
     double scrolledUnderElevation = appBarTheme.scrolledUnderElevation ?? 1.0;
 
-    // Tinggi logo disesuaikan agar muat dalam AppBar
     final double logoHeight = responsiveFontSize(context, 100.0);
-    // Tinggi AppBar yang diinginkan, bisa diambil dari preferredSize
     final double toolbarHeight = widget.preferredSize.height;
-
-
-    // Jika Anda ingin mengembalikan fungsionalitas search bar dinamis,
-    // Anda perlu mengaktifkan kembali _isSearching dan logika terkait.
-    // Untuk saat ini, kita buat ikon search hanya menavigasi.
 
     return AppBar(
       automaticallyImplyLeading: false,
@@ -83,8 +42,8 @@ class _HomeTopBarState extends State<HomeTopBar> {
       scrolledUnderElevation: scrolledUnderElevation,
       surfaceTintColor: surfaceTintColor,
       titleSpacing: 0,
-      centerTitle: false, // Judul tidak di tengah
-      toolbarHeight: toolbarHeight, // Mengatur tinggi AppBar
+      centerTitle: false,
+      toolbarHeight: toolbarHeight,
       title: Padding(
         padding: EdgeInsets.symmetric(horizontal: responsiveFontSize(context, 16.0)),
         child: Row(
@@ -119,18 +78,28 @@ class _HomeTopBarState extends State<HomeTopBar> {
                     );
                   },
                   tooltip: 'Search',
-                  splashRadius: responsiveFontSize(context, 22),
-                  padding: EdgeInsets.all(responsiveFontSize(context, 8)),
                 ),
-                IconButton(
-                  icon: Icon(Remix.notification_3_line, size: responsiveFontSize(context, 24), color: iconColor),
-                  onPressed: () {
-                    print('Notification icon tapped from HomeTopBar');
-                    // TODO: Implementasi navigasi atau aksi notifikasi
+                // --- PERUBAHAN UTAMA: Bungkus IconButton dengan OpenContainer ---
+                OpenContainer(
+                  transitionType: ContainerTransitionType.fadeThrough,
+                  openColor: theme.scaffoldBackgroundColor,
+                  closedColor: appBarBackgroundColor,
+                  closedElevation: 0,
+                  openElevation: 0,
+                  closedShape: const CircleBorder(),
+                  openShape: const RoundedRectangleBorder(),
+                  transitionDuration: const Duration(milliseconds: 350),
+                  openBuilder: (context, _) {
+                    return const NotificationScreen();
                   },
-                  tooltip: 'Notifications',
-                  splashRadius: responsiveFontSize(context, 22),
-                  padding: EdgeInsets.all(responsiveFontSize(context, 8)),
+                  // Widget awal (tombol notifikasi)
+                  closedBuilder: (context, openContainer) {
+                    return IconButton(
+                      icon: Icon(Remix.notification_3_line, size: responsiveFontSize(context, 24), color: iconColor),
+                      onPressed: openContainer, // Panggil ini untuk memulai animasi
+                      tooltip: tl('notification'),
+                    );
+                  },
                 ),
               ],
             ),

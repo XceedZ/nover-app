@@ -1,29 +1,66 @@
-// lib/models/book.dart
+// lib/src/models/book.dart
+
 class Book {
-  final String title;
-  final String chapter;
-  final String author;
-  final List<String> genres;
-  final String imageUrl;
-  final double rating;
-  final int id;
-  final int pages;
-  final String language;
+  final int bookId;
+  final String coverImageUrl;
+  final String createDatetime;
   final String description;
-  // double currentProgress; // Anda bisa tambahkan ini jika progress disimpan per buku
+  final String? genres;
+  final double ratingAverage;
+  final String status;
+  final String title;
+  final int totalViews;
+  final String updateDatetime;
+  final String? author;
 
   Book({
-    required this.id,
+    required this.bookId,
+    required this.coverImageUrl,
+    required this.createDatetime,
+    required this.description,
+    this.genres,
+    required this.ratingAverage,
+    required this.status,
     required this.title,
-    required this.chapter,
-    required this.author,
-    required this.imageUrl,
-    required this.rating,
-    this.pages = 252,
-    this.genres = const [],
-    this.language = "Eng",
-    // this.currentProgress = 0.0,
-    this.description =
-    "This is a captivating novel that takes readers on an extraordinary journey...",
+    required this.totalViews,
+    required this.updateDatetime,
+    this.author,
   });
+
+  factory Book.fromJson(Map<String, dynamic> json) {
+    return Book(
+      bookId: json['bookId'] as int,
+      coverImageUrl: json['coverImageUrl'] ?? '',
+      createDatetime: json['createDatetime'] ?? '',
+      description: json['description'] ?? 'No description available.',
+      genres: json['genres'] as String?,
+      ratingAverage: (json['ratingAverage'] as num?)?.toDouble() ?? 0.0,
+      status: json['status'] ?? 'Unknown',
+      title: json['title'] ?? 'Untitled',
+      totalViews: json['totalViews'] as int,
+      updateDatetime: json['updateDatetime'] ?? '',
+      author: json['author'],
+    );
+  }
+
+  /// Metode copyWith untuk membuat salinan objek dengan nilai yang diperbarui.
+  /// Ini akan menyelesaikan error 'copyWith' is not defined.
+  Book copyWith({
+    String? status,
+    // Anda bisa tambahkan properti lain di sini jika ingin memperbaruinya di masa depan
+  }) {
+    return Book(
+      bookId: bookId,
+      coverImageUrl: coverImageUrl,
+      createDatetime: createDatetime,
+      description: description,
+      genres: genres,
+      ratingAverage: ratingAverage,
+      status: status ?? this.status, // Gunakan status baru jika ada, jika tidak, gunakan yang lama
+      title: title,
+      totalViews: totalViews,
+      updateDatetime: updateDatetime,
+      author: author,
+    );
+  }
 }

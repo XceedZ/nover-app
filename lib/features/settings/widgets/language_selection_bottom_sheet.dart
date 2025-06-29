@@ -1,13 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:nover/src/utils/ui_helpers.dart';
-import 'package:flutter_translate/flutter_translate.dart';
-import 'package:remixicon/remixicon.dart';
-import 'package:nover/src/utils/app_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // 1. Impor SharedPreferences
-import 'package:nover/main.dart'; // 2. Impor main.dart untuk LANGUAGE_PREF_KEY
+// lib/features/settings/widgets/language_selection_bottom_sheet.dart
 
-// LANGUAGE_PREF_KEY sudah didefinisikan di main.dart dan diimpor.
+import 'package:flutter/material.dart';
+import 'package:flutter_translate/flutter_translate.dart';
+import 'package:nover/src/constants/app_constants.dart'; // <-- 1. IMPORT BARU
+import 'package:nover/src/utils/app_fonts.dart';
+import 'package:nover/src/utils/translation.dart';
+import 'package:remixicon/remixicon.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LanguageInfo {
   final String code;
@@ -21,7 +20,7 @@ class LanguageInfo {
   });
 
   String getTranslatedName(BuildContext context) {
-    return translate(nameKey);
+    return tl(nameKey);
   }
 }
 
@@ -35,10 +34,10 @@ class LanguageSelectionBottomSheet extends StatelessWidget {
     required this.onLanguageSelected,
   });
 
-  // 3. Fungsi untuk menyimpan preferensi bahasa
   Future<void> _saveLanguagePreference(String languageCode) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(LANGUAGE_PREF_KEY, languageCode);
+    // UBAH: Menggunakan konstanta dari AppConstants untuk konsistensi
+    await prefs.setString(AppConstants.languagePrefKey, languageCode);
     print('Language preference saved from BottomSheet: $languageCode');
   }
 
@@ -62,102 +61,83 @@ class LanguageSelectionBottomSheet extends StatelessWidget {
           flagAssetPath: 'assets/flags/id.png'),
     ];
 
-    return FractionallySizedBox(
-      heightFactor: 0.55,
-      child: ClipRRect(
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    return Container(
+      height: screenHeight * 0.4,
+      decoration: BoxDecoration(
+        color: sheetBackgroundColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24.0)),
-        child: Container(
-          color: sheetBackgroundColor,
-          child: Column(
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                    responsiveFontSize(context, 16.0),
-                    responsiveFontSize(context, 16.0),
-                    responsiveFontSize(context, 8.0),
-                    responsiveFontSize(context, 12.0)),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      translate('settings.language'),
-                      style: AppFonts.titleLarge(color: onSheetColor).copyWith(
-                          fontWeight: FontWeight.w600,
-                          fontSize: responsiveFontSize(context, 18)),
-                    ),
-                    IconButton(
-                      icon: Icon(Remix.close_line,
-                          color: iconColor,
-                          size: responsiveFontSize(context, 24.0)),
-                      onPressed: () => Navigator.pop(context),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                    ),
-                  ],
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 8, 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  tl('settings.language'),
+                  style: AppFonts.appBarTitle(color: onSheetColor),
                 ),
-              ),
-              Divider(color: dividerColor, height: 1),
-              Expanded(
-                child: ListView.separated(
-                  itemCount: supportedLanguages.length,
-                  padding: EdgeInsets.symmetric(
-                      vertical: responsiveFontSize(context, 8)),
-                  itemBuilder: (BuildContext listContext, int index) {
-                    final lang = supportedLanguages[index];
-                    final bool isSelected = lang.code == currentLanguageCode;
-                    return ListTile(
-                      leading: Image.asset(
-                        lang.flagAssetPath,
-                        width: responsiveFontSize(context, 28),
-                        height: responsiveFontSize(context, 28),
-                        errorBuilder: (context, error, stackTrace) {
-                          return Icon(Remix.earth_line,
-                              size: responsiveFontSize(context, 28),
-                              color: iconColor);
-                        },
-                      ),
-                      title: Text(
-                        lang.getTranslatedName(context),
-                        style: GoogleFonts.montserrat(
-                          fontSize: responsiveFontSize(context, 15),
-                          color: isSelected ? primaryColor : onSheetColor,
-                          fontWeight: isSelected
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                        ),
-                      ),
-                      trailing: isSelected
-                          ? Icon(Remix.check_line,
-                          color: primaryColor,
-                          size: responsiveFontSize(context, 22))
-                          : null,
-                      onTap: () async { // 4. Jadikan onTap async
-                        if (lang.code != currentLanguageCode) {
-                          // Panggil changeLocale dari flutter_translate
-                          changeLocale(context, lang.code);
-                          // Simpan preferensi bahasa
-                          await _saveLanguagePreference(lang.code);
-                          // Panggil callback ke parent widget (SettingsScreen)
-                          // agar parent bisa update UI-nya jika perlu
-                          onLanguageSelected(lang.code);
-                        }
-                        Navigator.pop(context);
-                      },
-                      contentPadding: EdgeInsets.symmetric(
-                          horizontal: responsiveFontSize(context, 20),
-                          vertical: responsiveFontSize(context, 6)),
-                    );
-                  },
-                  separatorBuilder: (context, index) => Divider(
-                      color: dividerColor.withOpacity(0.5),
-                      height: 0.5,
-                      indent: responsiveFontSize(context, 20),
-                      endIndent: responsiveFontSize(context, 20)),
+                IconButton(
+                  icon: Icon(Remix.close_line, color: iconColor, size: 24.0),
+                  onPressed: () => Navigator.pop(context),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+          Divider(color: dividerColor, height: 1),
+          Expanded(
+            child: ListView.builder(
+              itemCount: supportedLanguages.length,
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              itemBuilder: (BuildContext listContext, int index) {
+                final lang = supportedLanguages[index];
+                final bool isSelected = lang.code == currentLanguageCode;
+
+                return InkWell(
+                  onTap: () async {
+                    if (lang.code != currentLanguageCode) {
+                      changeLocale(context, lang.code);
+                      await _saveLanguagePreference(lang.code);
+                      onLanguageSelected(lang.code);
+                    }
+                    Navigator.pop(context);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    child: Row(
+                      children: [
+                        Image.asset(
+                          lang.flagAssetPath,
+                          width: 28,
+                          height: 28,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(Remix.earth_line, size: 28, color: iconColor);
+                          },
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(
+                            lang.getTranslatedName(listContext),
+                            style: AppFonts.titleMedium(
+                              color: isSelected ? primaryColor : onSheetColor,
+                            )?.copyWith(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500),
+                          ),
+                        ),
+                        if (isSelected)
+                          Icon(Remix.check_line, color: primaryColor, size: 22)
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

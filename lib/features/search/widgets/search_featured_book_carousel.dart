@@ -4,7 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:nover/src/utils/app_fonts.dart';
 import 'package:nover/src/utils/ui_helpers.dart';
 import 'package:nover/features/home/screens/home_screen_content.dart' show Book;
-import 'package:nover/features/search/widgets/book_stats_row_widget.dart'; // Pastikan path ini benar
+import 'package:nover/src/widgets/book_stats_row_widget.dart';
 import 'package:remixicon/remixicon.dart';
 
 class SearchFeaturedBookCarousel extends StatefulWidget {
@@ -28,13 +28,12 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
   int _currentPage = 0;
   double _pageOffset = 0.0;
 
-  final double _carouselCoverBaseHeight = 250.0; // Ukuran cover diperbesar
+  final double _carouselCoverBaseHeight = 250.0;
 
   @override
   void initState() {
     super.initState();
     _initializePageControllerAndOffset();
-    // Listener untuk _pageOffset sudah ada di _initializePageController
   }
 
   void _initializePageControllerAndOffset() {
@@ -43,7 +42,7 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
       initialPage = (widget.books.length ~/ 2).clamp(0, widget.books.length - 1);
     }
     _currentPage = initialPage;
-    _pageOffset = _currentPage.toDouble(); // Inisialisasi _pageOffset agar animasi awal benar
+    _pageOffset = _currentPage.toDouble();
 
     _pageController = PageController(
       initialPage: _currentPage,
@@ -67,9 +66,8 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
 
     if (booksHaveChanged) {
       _pageController.dispose();
-      _initializePageControllerAndOffset(); // Panggil ini untuk reset semua
+      _initializePageControllerAndOffset();
 
-      // Penting untuk memastikan PageView melompat ke halaman yang benar setelah rebuild
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _pageController.hasClients && widget.books.isNotEmpty) {
           _pageController.jumpToPage(_currentPage);
@@ -86,7 +84,6 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
 
   @override
   Widget build(BuildContext context) {
-    // Hitung dimensi cover di dalam build agar selalu terupdate dengan context
     final double carouselCoverHeight = responsiveFontSize(context, _carouselCoverBaseHeight);
     final double carouselCoverWidth = carouselCoverHeight * (2.0 / 3.0);
 
@@ -95,18 +92,17 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
         padding: EdgeInsets.all(responsiveFontSize(context, 20)),
         child: Center(
           child: Text(
-              "No books to display.", // Pesan jika tidak ada buku
+              "No books to display.",
               style: AppFonts.titleMedium(color: widget.onSectionColor.withOpacity(0.7))
           ),
         ),
       );
     }
 
-    // displayPageIndex sekarang selalu berdasarkan _pageOffset yang diupdate oleh listener
     int displayPageIndex = _pageOffset.round().clamp(0, widget.books.length - 1);
     Book currentBook = widget.books[displayPageIndex];
 
-    double pageViewHeight = carouselCoverHeight + responsiveFontSize(context, 40); // Tinggi untuk PageView, beri ruang untuk vertical offset
+    double pageViewHeight = carouselCoverHeight + responsiveFontSize(context, 40);
 
     return Container(
       padding: EdgeInsets.symmetric(vertical: responsiveFontSize(context, 10)),
@@ -121,7 +117,7 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
               onPageChanged: (index) {
                 if (mounted) {
                   setState(() {
-                    _currentPage = index; // Update _currentPage saat user scroll dan halaman berhenti
+                    _currentPage = index;
                   });
                 }
               },
@@ -131,11 +127,10 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
                 double opacity;
                 double verticalOffset;
 
-                // Kalkulasi animasi selalu berdasarkan _pageOffset untuk smoothness
                 double pageDistance = (_pageOffset - index).abs();
 
                 scale = (1 - (pageDistance * 0.22)).clamp(0.70, 1.0);
-                opacity = (1 - (pageDistance * 0.6)).clamp(0.3, 1.0); // Opacity item samping dari 0.3
+                opacity = (1 - (pageDistance * 0.6)).clamp(0.3, 1.0);
                 verticalOffset = pageDistance * responsiveFontSize(context, 25);
 
                 return Center(
@@ -153,7 +148,7 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
                             decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12.0),
                                 boxShadow: [
-                                  if (scale > 0.95) // Shadow hanya untuk item yang hampir/tengah
+                                  if (scale > 0.95)
                                     BoxShadow(
                                       color: Colors.black.withOpacity(0.12),
                                       blurRadius: 12,
@@ -163,7 +158,7 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
                                 ]
                             ),
                             child: Hero(
-                              tag: 'search_carousel_book_${book.id}_$index', // Pastikan tag unik
+                              tag: 'search_carousel_book_${book.id}_$index',
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(12.0),
                                 child: Image.network(
@@ -223,11 +218,19 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: responsiveFontSize(context, 16)),
-                  BookStatsRowWidget(
-                    pages: currentBook.pages,
-                    language: currentBook.language,
-                    rating: currentBook.rating,
+
+                  // --- PERUBAHAN DI SINI ---
+                  // Mengganti BookStatsRowWidget lama dengan komposisi widget baru
+                  StatsRowContainer(
+                    children: [
+                      StatItem(value: currentBook.pages.toString(), label: "Chapters"),
+                      const StatDivider(),
+                      StatItem(value: currentBook.language, label: "Language"),
+                      const StatDivider(),
+                      StatItem(value: currentBook.rating.toStringAsFixed(1), label: "Rating"),
+                    ],
                   ),
+
                   SizedBox(height: responsiveFontSize(context, 16)),
                   Text(
                     currentBook.description,

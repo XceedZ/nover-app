@@ -13,8 +13,9 @@ import 'package:flutter_translate/flutter_translate.dart';
 import 'package:nover/features/settings/widgets/language_selection_bottom_sheet.dart';
 import 'package:nover/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:nover/src/repositories/auth_repository.dart'; // <-- TAMBAHKAN INI
-import 'package:nover/features/auth/screens/welcome_screen.dart'; // <-- TAMBAHKAN INI
+import 'package:nover/src/repositories/auth_repository.dart';
+import 'package:nover/features/auth/screens/welcome_screen.dart';
+import 'package:nover/src/constants/app_constants.dart'; // <-- IMPORT BARU
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -27,9 +28,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
   String _cacheSizeString = "";
   String? _currentLanguageCode;
-
-  // Variabel untuk mode performa rendah tidak lagi dikelola sebagai state lokal di sini,
-  // melainkan melalui lowPerformanceModeProvider global.
 
   @override
   void initState() {
@@ -71,7 +69,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       }
     } catch (e) {
-      print("Error calculating cache size: $e");
       if (mounted) {
         setState(() => _cacheSizeString = errorText);
       }
@@ -85,18 +82,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _handleLogout() async {
-    // 1. Buat instance dari AuthRepository
     final AuthRepository authRepository = AuthRepository();
-
-    // 2. Panggil fungsi logout dari repository
-    // Ini akan memanggil API (jika ada) dan menghapus token dari secure storage
     await authRepository.logout();
-
-    // 3. Update state global, beri tahu aplikasi bahwa tidak ada lagi pengguna yang login
     authNotifier.value = null;
 
-    // 4. Navigasi ke WelcomeScreen dan hapus semua halaman sebelumnya dari tumpukan
-    // Ini mencegah pengguna menekan tombol "kembali" untuk masuk lagi ke halaman yang dilindungi
     if (mounted) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (context) => const WelcomeScreen()),
@@ -184,7 +173,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               changeLocale(context, newLangCode);
               setState(() {
                 _currentLanguageCode = newLangCode;
-                _cacheSizeString = translate('settings.languageOptions.calculatingCache');
+                _cacheSizeString = translate('settings.calculating_cache');
                 _calculateCacheSize();
               });
             }
@@ -199,7 +188,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     ThemeData theme = Theme.of(context);
     bool currentIsDarkMode = themeProvider.value == ThemeMode.dark;
-    // Ambil nilai saat ini dari provider global
     bool currentLowPerformanceMode = lowPerformanceModeProvider.value;
 
     Color onSurfaceColor = theme.colorScheme.onSurface;
@@ -230,7 +218,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         title: Text(
           translate('settings.title'),
-          style: (AppFonts.titleLarge(color: onSurfaceColor) ?? TextStyle(color: onSurfaceColor, fontSize: 20))
+          style: (AppFonts.titleLarge(color: onSurfaceColor))
               .copyWith(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -305,8 +293,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   iconColor: defaultSettingsIconColor,
                   onTap: () {
                     themeProvider.toggleTheme();
-                    // setState diperlukan jika Anda ingin UI SettingsScreen langsung update tanpa ValueListenableBuilder di root MyApp
-                    // Namun, jika MyApp sudah menangani rebuild, ini mungkin tidak perlu. Untuk konsistensi:
                     setState(() {});
                   },
                   trailing: CupertinoSwitch(
@@ -314,35 +300,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     activeColor: theme.colorScheme.primary,
                     onChanged: (bool value) {
                       themeProvider.setThemeMode(value ? ThemeMode.dark : ThemeMode.light);
-                      // setState(() {}); // Dikelola oleh ValueListenableBuilder di MyApp jika ada, atau panggil setState jika ingin perubahan segera
                     },
                   ),
                 ),
-                // BARIS BARU UNTUK MODE PERFORMA RENDAH
                 _buildSettingsItem(
                   context,
-                  icon: Remix.dashboard_2_line, // Ikon untuk performa
-                  titleKey: 'label.lowPerformanceMode', // Kunci terjemahan baru
+                  icon: Remix.dashboard_2_line,
+                  titleKey: 'label.lowPerformanceMode',
                   iconColor: defaultSettingsIconColor,
-                  onTap: () async { // Jadikan onTap async
+                  onTap: () async {
                     final newValue = !lowPerformanceModeProvider.value;
                     lowPerformanceModeProvider.value = newValue;
-                    // Simpan ke SharedPreferences
                     final prefs = await SharedPreferences.getInstance();
-                    await prefs.setBool(LOW_PERFORMANCE_MODE_PREF_KEY, newValue);
-                    if (mounted) setState(() {}); // Rebuild UI untuk update switch
+                    // UBAH: Menggunakan konstanta dari AppConstants
+                    await prefs.setBool(AppConstants.lowPerformanceModePrefKey, newValue);
+                    if (mounted) setState(() {});
                   },
                   trailing: CupertinoSwitch(
                     value: currentLowPerformanceMode,
                     activeColor: theme.colorScheme.primary,
-                    onChanged: (bool value) async { // Jadikan onChanged async
+                    onChanged: (bool value) async {
                       lowPerformanceModeProvider.value = value;
-                      // Simpan ke SharedPreferences
                       final prefs = await SharedPreferences.getInstance();
-                      await prefs.setBool(LOW_PERFORMANCE_MODE_PREF_KEY, value);
-                      // setState di sini mungkin tidak perlu jika ValueListenableBuilder digunakan
-                      // di level atas untuk me-rebuild SettingsScreen ketika lowPerformanceModeProvider berubah.
-                      // Namun, untuk memastikan switch langsung update, setState() aman digunakan.
+                      // UBAH: Menggunakan konstanta dari AppConstants
+                      await prefs.setBool(AppConstants.lowPerformanceModePrefKey, value);
                       if (mounted) setState(() {});
                     },
                   ),
@@ -362,7 +343,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  isLastItemInGroup: true, // Sekarang item ini menjadi yang terakhir di grup
+                  isLastItemInGroup: true,
                 ),
               ]
           ),
@@ -473,7 +454,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           decoration: BoxDecoration(
             border: isLastItemInGroup
                 ? null
-                : Border(bottom: BorderSide(color: theme.dividerColor.withOpacity(0.5), width: 0.6)), // Menggunakan theme.dividerColor
+                : Border(bottom: BorderSide(color: theme.dividerColor.withOpacity(0.5), width: 0.6)),
           ),
           child: Row(
             children: [
@@ -489,7 +470,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               if (trailing != null)
                 trailing
-              else if (onTap != null) // Hanya tampilkan panah jika ada onTap dan tidak ada trailing
+              else if (onTap != null)
                 Icon(Remix.arrow_right_s_line, color: Colors.grey.shade400, size: responsiveFontSize(context, 22)),
             ],
           ),
