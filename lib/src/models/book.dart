@@ -39,28 +39,37 @@ class Book {
       title: json['title'] ?? 'Untitled',
       totalViews: json['totalViews'] as int,
       updateDatetime: json['updateDatetime'] ?? '',
-      author: json['author'],
+      author: json['authorPenName'] ?? json['author'],
     );
   }
 
-  /// Metode copyWith untuk membuat salinan objek dengan nilai yang diperbarui.
+  /// BARU: Metode copyWith untuk membuat salinan objek dengan nilai yang diperbarui.
   /// Ini akan menyelesaikan error 'copyWith' is not defined.
   Book copyWith({
+    int? bookId,
+    String? coverImageUrl,
+    String? createDatetime,
+    String? description,
+    String? genres,
+    double? ratingAverage,
     String? status,
-    // Anda bisa tambahkan properti lain di sini jika ingin memperbaruinya di masa depan
+    String? title,
+    int? totalViews,
+    String? updateDatetime,
+    String? author,
   }) {
     return Book(
-      bookId: bookId,
-      coverImageUrl: coverImageUrl,
-      createDatetime: createDatetime,
-      description: description,
-      genres: genres,
-      ratingAverage: ratingAverage,
+      bookId: bookId ?? this.bookId,
+      coverImageUrl: coverImageUrl ?? this.coverImageUrl,
+      createDatetime: createDatetime ?? this.createDatetime,
+      description: description ?? this.description,
+      genres: genres ?? this.genres,
+      ratingAverage: ratingAverage ?? this.ratingAverage,
       status: status ?? this.status, // Gunakan status baru jika ada, jika tidak, gunakan yang lama
-      title: title,
-      totalViews: totalViews,
-      updateDatetime: updateDatetime,
-      author: author,
+      title: title ?? this.title,
+      totalViews: totalViews ?? this.totalViews,
+      updateDatetime: updateDatetime ?? this.updateDatetime,
+      author: author ?? this.author,
     );
   }
 }

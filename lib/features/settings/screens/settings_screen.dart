@@ -2,20 +2,19 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:nover/src/utils/app_fonts.dart';
 import 'package:nover/src/utils/ui_helpers.dart';
 import 'package:remixicon/remixicon.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:snackify/snackify.dart';
-import 'package:snackify/enums/snack_enums.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:nover/features/settings/widgets/language_selection_bottom_sheet.dart';
 import 'package:nover/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nover/src/repositories/auth_repository.dart';
 import 'package:nover/features/auth/screens/welcome_screen.dart';
-import 'package:nover/src/constants/app_constants.dart'; // <-- IMPORT BARU
+import 'package:nover/src/constants/app_constants.dart';
+import 'package:nover/src/widgets/custom_snackbar.dart'; // <-- IMPORT BARU
+import 'package:nover/src/utils/translation.dart'; // <-- IMPORT BARU untuk tl()
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -37,7 +36,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         var delegate = LocalizedApp.of(context).delegate;
         setState(() {
           _currentLanguageCode = delegate.currentLocale.languageCode;
-          _cacheSizeString = translate('settings.calculating_cache');
+          _cacheSizeString = tl('settings.calculating_cache');
         });
         _calculateCacheSize();
       }
@@ -46,8 +45,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _calculateCacheSize() async {
     if (!mounted) return;
-    final calculatingText = mounted ? translate('settings.calculating_cache') : "Calculating...";
-    final errorText = mounted ? translate('settings.cache_error') : "Error";
+    final calculatingText = mounted ? tl('settings.calculating_cache') : "Calculating...";
+    final errorText = mounted ? tl('settings.cache_error') : "Error";
 
     if (_cacheSizeString.isEmpty || _cacheSizeString == calculatingText || _cacheSizeString == "0 B" || _cacheSizeString == errorText) {
       if (mounted) {
@@ -131,29 +130,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await _calculateCacheSize();
 
     if (mounted) {
-      Snackify.show(
-        context: context,
-        type: SnackType.success,
-        title: Text(
-          translate('settings.languageOptions.success'),
-          style: GoogleFonts.montserrat(
-            color: Theme.of(context).colorScheme.onPrimary,
-          ),
-        ),
-        subtitle: Text(
-          translate('settings.languageOptions.cacheCleared'),
-          style: GoogleFonts.montserrat(
-            color: Theme.of(context).colorScheme.onPrimary,
-          ),
-        ),
-        position: SnackPosition.top,
-        backgroundGradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.primary,
-          ],
-        ),
-        duration: const Duration(seconds: 3),
+      // UBAH: Menggunakan AppSnackbar yang sudah dibuat
+      AppSnackbar.showSuccess(
+        context,
+        title: tl('settings.languageOptions.success'),
+        message: tl('settings.languageOptions.cacheCleared'),
       );
     }
   }
@@ -173,7 +154,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               changeLocale(context, newLangCode);
               setState(() {
                 _currentLanguageCode = newLangCode;
-                _cacheSizeString = translate('settings.calculating_cache');
+                _cacheSizeString = tl('settings.calculating_cache');
                 _calculateCacheSize();
               });
             }
@@ -191,7 +172,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     bool currentLowPerformanceMode = lowPerformanceModeProvider.value;
 
     Color onSurfaceColor = theme.colorScheme.onSurface;
-    Color subtleTextColor = Colors.grey.shade600;
+    Color subtleTextColor = theme.textTheme.bodySmall?.color ?? Colors.grey.shade600;
     Color settingsGroupBackgroundColor = theme.cardColor;
     List<BoxShadow> cardBoxShadow = [
       BoxShadow(
@@ -217,9 +198,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          translate('settings.title'),
-          style: (AppFonts.titleLarge(color: onSurfaceColor))
-              .copyWith(fontWeight: FontWeight.bold),
+          tl('settings.title'),
+          // UBAH: Menggunakan style yang benar
+          style: AppFonts.appBarTitle(color: onSurfaceColor),
         ),
         centerTitle: true,
       ),
@@ -279,7 +260,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         Text(
                           _currentLanguageCode == 'en' ? 'English' : 'Indonesia',
-                          style: GoogleFonts.montserrat(fontSize: responsiveFontSize(context, 13), color: subtleTextColor),
+                          // UBAH: Menggunakan style yang benar
+                          style: AppFonts.titleSmall(color: subtleTextColor),
                         ),
                         SizedBox(width: responsiveFontSize(context, 4)),
                         Icon(Remix.arrow_right_s_line, color: subtleTextColor, size: responsiveFontSize(context, 20)),
@@ -293,7 +275,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   iconColor: defaultSettingsIconColor,
                   onTap: () {
                     themeProvider.toggleTheme();
-                    setState(() {});
                   },
                   trailing: CupertinoSwitch(
                     value: currentIsDarkMode,
@@ -312,9 +293,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     final newValue = !lowPerformanceModeProvider.value;
                     lowPerformanceModeProvider.value = newValue;
                     final prefs = await SharedPreferences.getInstance();
-                    // UBAH: Menggunakan konstanta dari AppConstants
                     await prefs.setBool(AppConstants.lowPerformanceModePrefKey, newValue);
-                    if (mounted) setState(() {});
                   },
                   trailing: CupertinoSwitch(
                     value: currentLowPerformanceMode,
@@ -322,9 +301,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onChanged: (bool value) async {
                       lowPerformanceModeProvider.value = value;
                       final prefs = await SharedPreferences.getInstance();
-                      // UBAH: Menggunakan konstanta dari AppConstants
                       await prefs.setBool(AppConstants.lowPerformanceModePrefKey, value);
-                      if (mounted) setState(() {});
                     },
                   ),
                 ),
@@ -339,7 +316,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Text(
                       displayCacheSize,
                       textAlign: TextAlign.end,
-                      style: GoogleFonts.montserrat(fontSize: responsiveFontSize(context, 13), color: subtleTextColor),
+                      // UBAH: Menggunakan style yang benar
+                      style: AppFonts.titleSmall(color: subtleTextColor),
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -378,7 +356,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             padding: EdgeInsets.symmetric(horizontal: responsiveFontSize(context, 16.0)),
             child: TextButton(
               style: TextButton.styleFrom(
-                backgroundColor: Colors.red.withOpacity(0.08),
+                backgroundColor: theme.colorScheme.error.withOpacity(0.1),
                 padding: EdgeInsets.symmetric(vertical: responsiveFontSize(context, 15)),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(cardBorderRadius),
@@ -388,15 +366,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Remix.logout_circle_r_line, color: Colors.red.shade700, size: responsiveFontSize(context, 20)),
+                  Icon(Remix.logout_circle_r_line, color: theme.colorScheme.error, size: responsiveFontSize(context, 20)),
                   SizedBox(width: responsiveFontSize(context, 8)),
                   Text(
-                    translate('settings.languageOptions.logOut'),
-                    style: GoogleFonts.montserrat(
-                      fontSize: responsiveFontSize(context, 15),
-                      color: Colors.red.shade700,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    tl('settings.languageOptions.logOut'),
+                    // UBAH: Menggunakan style yang benar
+                    style: AppFonts.titleMedium(color: theme.colorScheme.error)?.copyWith(fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -462,10 +437,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               SizedBox(width: responsiveFontSize(context, 16)),
               Expanded(
                 child: Text(
-                    translate(titleKey),
-                    style: AppFonts.titleMedium(color: theme.colorScheme.onSurface).copyWith(
-                      fontSize: responsiveFontSize(context, 14.5),
-                    )
+                  tl(titleKey),
+                  // UBAH: Menggunakan style yang benar
+                  style: AppFonts.titleMedium(color: theme.colorScheme.onSurface),
                 ),
               ),
               if (trailing != null)

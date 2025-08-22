@@ -1,84 +1,74 @@
 // lib/src/widgets/custom_menu.dart
-
 import 'package:flutter/material.dart';
-import 'package:nover/src/utils/app_fonts.dart'; // Pastikan path ini benar
+import 'package:nover/src/utils/app_fonts.dart';
 
-/// Model data untuk setiap item di dalam menu kustom kita.
+/// Model untuk setiap item di dalam menu kustom.
 class CustomMenuItem {
   final String title;
   final IconData icon;
-  final VoidCallback onTap;
-  final bool isDanger; // Menandakan apakah ini item "berbahaya" (merah)
+  final VoidCallback? onTap;
+  final bool isDanger;
 
   CustomMenuItem({
     required this.title,
     required this.icon,
-    required this.onTap,
+    this.onTap,
     this.isDanger = false,
   });
 }
 
-/// Kelas helper untuk menampilkan PopupMenu kustom.
+/// Kelas untuk menampilkan PopupMenu kustom yang modern.
 class CustomPopupMenu {
-  static Future<void> show({
-    required BuildContext context,
-    required GlobalKey buttonKey, // Kunci dari tombol yang memicu menu
-    required List<CustomMenuItem> items,
-  }) async {
-    final RenderBox renderBox = buttonKey.currentContext!.findRenderObject() as RenderBox;
-    final size = renderBox.size;
-    final position = renderBox.localToGlobal(Offset.zero);
+  CustomPopupMenu._();
 
-    // --- PERBAIKAN 1: Ubah generic type dari <int> menjadi <void> ---
-    // Ini karena kita tidak mengharapkan nilai kembalian, hanya aksi onTap.
-    await showMenu<void>(
+  static void show({
+    required BuildContext context,
+    required GlobalKey buttonKey,
+    required List<CustomMenuItem> items,
+  }) {
+    // Dapatkan posisi dan ukuran tombol yang ditekan
+    final RenderBox? renderBox = buttonKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    final size = renderBox.size;
+    final offset = renderBox.localToGlobal(Offset.zero);
+
+    final RelativeRect position = RelativeRect.fromLTRB(
+      offset.dx, // left
+      offset.dy + size.height, // top (di bawah tombol)
+      offset.dx + size.width, // right
+      offset.dy + size.height, // bottom
+    );
+
+    // Gunakan showMenu bawaan Flutter, ini adalah cara yang paling stabil.
+    showMenu<void>(
       context: context,
-      position: RelativeRect.fromLTRB(
-        position.dx,
-        position.dy + size.height,
-        position.dx + size.width,
-        position.dy + size.height,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
-      ),
-      elevation: 8.0,
+      position: position,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 4,
       items: items.map((item) {
-        // --- PERBAIKAN 1 (Lanjutan): Tentukan tipe PopupMenuItem menjadi <void> ---
         return PopupMenuItem<void>(
+          // UBAH: onTap sekarang langsung memanggil aksi.
+          // showMenu secara otomatis akan menutup menu setelah onTap selesai.
           onTap: item.onTap,
-          padding: EdgeInsets.zero,
-          child: _buildMenuItemWidget(context, item),
+          child: Row(
+            children: [
+              Icon(
+                item.icon,
+                size: 20,
+                color: item.isDanger ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.onSurface,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                item.title,
+                style: AppFonts.titleSmall(
+                  color: item.isDanger ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
         );
       }).toList(),
-    );
-  }
-
-  /// Widget private untuk membangun tampilan setiap item menu.
-  static Widget _buildMenuItemWidget(BuildContext context, CustomMenuItem item) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    final Color iconColor = item.isDanger ? colorScheme.error : colorScheme.onSurface.withOpacity(0.7);
-    final Color textColor = item.isDanger ? colorScheme.error : colorScheme.onSurface;
-    final Color? tileColor = item.isDanger ? colorScheme.error.withOpacity(0.1) : null;
-
-    return Container(
-      color: tileColor,
-      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
-      child: Row(
-        children: [
-          Icon(item.icon, color: iconColor, size: 22),
-          const SizedBox(width: 16),
-          Text(
-            item.title,
-            // --- PERBAIKAN 2: Menggunakan AppFonts sesuai permintaan ---
-            style: AppFonts.titleMedium(color: textColor)?.copyWith(
-              fontWeight: FontWeight.w500, // Sedikit penyesuaian agar tidak terlalu tebal
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -3,19 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:nover/src/utils/app_fonts.dart'; // Pastikan path ini benar
-import 'package:nover/src/utils/ui_helpers.dart'; // Pastikan path ini benar
-import 'package:nover/features/books/widgets/custom_detail_top_bar.dart'; // Pastikan path ini benar
-import 'package:nover/features/books/widgets/custom_read_bottom_bar.dart'; // Pastikan path ini benar
-import 'package:nover/features/books/widgets/reading_settings_bottom_sheet.dart'; // Pastikan path ini benar
+import 'package:nover/src/utils/app_fonts.dart';
+import 'package:nover/src/utils/ui_helpers.dart';
+import 'package:nover/features/books/widgets/custom_detail_top_bar.dart';
+import 'package:nover/features/books/widgets/custom_read_bottom_bar.dart';
+import 'package:nover/features/books/widgets/reading_settings_bottom_sheet.dart';
 
 const Duration _kBarAnimationDuration = Duration(milliseconds: 250);
 const Curve _kBarAnimationCurve = Curves.easeOutCubic;
 const double _kProgressIndicatorHeight = 3.0;
-
 const double _kCustomReadScreenTopBarContentHeight = kToolbarHeight + 16.0;
 
 class ReadNovelScreen extends StatefulWidget {
+  // FIX: Kembalikan ke parameter awal untuk menampilkan teks
   final String chapterIntroLabelText;
   final String chapterTitleText;
   final String chapterBodyText;
@@ -33,23 +33,22 @@ class ReadNovelScreen extends StatefulWidget {
 
 class _ReadNovelScreenState extends State<ReadNovelScreen> with TickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
+  final GlobalKey _chapterTitleKey = GlobalKey();
   bool _showTitleInAppBarContent = false;
   bool _isBarsVisible = true;
   double _currentProgress = 0.0;
-  final GlobalKey _chapterTitleKey = GlobalKey();
 
+  // State untuk Reading Settings
   double _currentBrightness = 1.0;
-  String _currentFontFamily = 'Lora';
+  String _currentFontFamily = 'Montserrat';
   late ReadingTheme _currentReadingTheme;
   double _currentFontSize = 17.0;
   TextAlign _currentTextAlign = TextAlign.left;
   late ReadScrollMode _currentScrollMode;
-
   late Color _currentScreenBackgroundColor;
   late Color _currentBodyTextColor;
   late Color _currentTopBarBackgroundColor;
   late Color _currentTopBarIconColor;
-
   bool _isInitialThemeSetupDone = false;
   static const double _hideBarsScrollThreshold = 10.0;
 
@@ -87,6 +86,7 @@ class _ReadNovelScreenState extends State<ReadNovelScreen> with TickerProviderSt
     super.dispose();
   }
 
+  // ... (semua fungsi UI seperti _goFullscreen, _onScroll, dll tidak perlu diubah)
   void _goFullscreen() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
   }
@@ -229,6 +229,7 @@ class _ReadNovelScreenState extends State<ReadNovelScreen> with TickerProviderSt
     });
   }
 
+
   @override
   Widget build(BuildContext context) {
     final ThemeData appTheme = Theme.of(context);
@@ -253,11 +254,10 @@ class _ReadNovelScreenState extends State<ReadNovelScreen> with TickerProviderSt
       color: _currentBodyTextColor, height: 1.7, fontWeight: FontWeight.normal,
     );
 
-    // Padding atas default untuk konten ketika semua bar terlihat
     final double defaultTopPaddingForContent = topSafeArea +
         _kCustomReadScreenTopBarContentHeight +
         _kProgressIndicatorHeight +
-        responsiveFontSize(context, 16); // Spasi tambahan setelah progress bar
+        responsiveFontSize(context, 16);
 
     Widget readingContent;
     if (_currentScrollMode == ReadScrollMode.scroll) {
@@ -266,7 +266,7 @@ class _ReadNovelScreenState extends State<ReadNovelScreen> with TickerProviderSt
         padding: EdgeInsets.only(
           left: responsiveFontSize(context, 20),
           right: responsiveFontSize(context, 20),
-          top: defaultTopPaddingForContent, // Gunakan padding yang sudah memperhitungkan semua elemen top bar
+          top: defaultTopPaddingForContent,
           bottom: (_isBarsVisible ? (CustomReadBottomBar.kBottomBarHeight + bottomSafeArea) : 0) + responsiveFontSize(context, 15),
         ),
         child: Column(
@@ -289,8 +289,8 @@ class _ReadNovelScreenState extends State<ReadNovelScreen> with TickerProviderSt
         padding: EdgeInsets.only(
           left: responsiveFontSize(context, 20),
           right: responsiveFontSize(context, 20),
-          top: defaultTopPaddingForContent, // Gunakan padding yang sama
-          bottom: (_isBarsVisible ? CustomReadBottomBar.kBottomBarHeight + bottomSafeArea : 0) + responsiveFontSize(context, 15),
+          top: defaultTopPaddingForContent,
+          bottom: (_isBarsVisible ? (CustomReadBottomBar.kBottomBarHeight + bottomSafeArea) : 0) + responsiveFontSize(context, 15),
         ),
         child: Text("Mode Geser (Swipe) belum diimplementasikan.", textAlign: TextAlign.center, style: novelBodyStyle),
       );
@@ -313,28 +313,21 @@ class _ReadNovelScreenState extends State<ReadNovelScreen> with TickerProviderSt
             AnimatedPositioned(
               duration: _kBarAnimationDuration,
               curve: _kBarAnimationCurve,
-              // --- PERUBAHAN KUNCI UNTUK ANIMASI TOP BAR ---
-              // Saat bar disembunyikan (_isBarsVisible = false), geser Container ke atas
-              // sejauh tinggi konten CustomDetailTopBar (_kCustomReadScreenTopBarContentHeight).
-              // Ini akan membuat CustomDetailTopBar (beserta area status barnya) keluar layar,
-              // tetapi LinearProgressIndicator (yang ada di bawahnya dalam Column) akan
-              // muncul pada posisi topSafeArea.
               top: _isBarsVisible ? 0 : -_kCustomReadScreenTopBarContentHeight,
-              // --- AKHIR PERUBAHAN KUNCI ---
               left: 0,
               right: 0,
               child: Container(
-                color: _currentTopBarBackgroundColor, // Warna latar belakang untuk keseluruhan top bar area
+                color: _currentTopBarBackgroundColor,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     CustomDetailTopBar(
-                      backgroundColor: Colors.transparent, // Biarkan Container induk yang memberi warna
+                      backgroundColor: Colors.transparent,
                       iconColor: _currentTopBarIconColor,
                       onBackPressed: () => Navigator.of(context).pop(),
                       onSharePressed: () { print('Share tapped'); },
-                      topPadding: topSafeArea, // Untuk padding status bar internal di CustomDetailTopBar
-                      height: _kCustomReadScreenTopBarContentHeight, // Tinggi konten CustomDetailTopBar
+                      topPadding: topSafeArea,
+                      height: _kCustomReadScreenTopBarContentHeight,
                       bookTitle: widget.chapterTitleText,
                       chapterText: widget.chapterIntroLabelText,
                       showTitleAuthor: _showTitleInAppBarContent,

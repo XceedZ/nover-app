@@ -1,7 +1,7 @@
 // lib/features/books/widgets/custom_detail_top_bar.dart
 import 'package:flutter/material.dart';
-import 'package:nover/src/utils/app_fonts.dart'; // Pastikan path ini benar
-import 'package:nover/src/utils/ui_helpers.dart'; // Pastikan path ini benar
+import 'package:nover/src/utils/app_fonts.dart';
+import 'package:nover/src/utils/ui_helpers.dart';
 import 'package:remixicon/remixicon.dart';
 
 class CustomDetailTopBar extends StatelessWidget implements PreferredSizeWidget {
@@ -13,7 +13,7 @@ class CustomDetailTopBar extends StatelessWidget implements PreferredSizeWidget 
   final double height;
   final String? bookTitle;
   final String? bookAuthor;
-  final String? chapterText; // Untuk menampilkan info chapter
+  final String? chapterText;
   final bool showTitleAuthor;
 
   const CustomDetailTopBar({
@@ -26,7 +26,7 @@ class CustomDetailTopBar extends StatelessWidget implements PreferredSizeWidget 
     required this.height,
     this.bookTitle,
     this.bookAuthor,
-    this.chapterText, // Ditambahkan
+    this.chapterText,
     this.showTitleAuthor = false,
   });
 
@@ -68,9 +68,12 @@ class CustomDetailTopBar extends StatelessWidget implements PreferredSizeWidget 
                     if (bookTitle != null && bookTitle!.isNotEmpty)
                       Text(
                         bookTitle!,
-                        style: AppFonts.titleStyle.copyWith( // Sesuai kode Anda: titleStyle adalah Montserrat W600
-                          color: iconColor, // Warna solid dari iconColor
+                        // --- PERBAIKAN UTAMA DI SINI ---
+                        // Mengganti `AppFonts.titleStyle` yang sudah tidak ada
+                        // dengan `AppFonts.titleMedium` yang menggunakan Montserrat.
+                        style: AppFonts.titleMedium(color: iconColor)?.copyWith(
                           fontSize: responsiveFontSize(context, 15),
+                          fontWeight: FontWeight.w600, // Menjadikannya semi-bold
                         ),
                         overflow: TextOverflow.ellipsis,
                         maxLines: 1,
@@ -80,7 +83,7 @@ class CustomDetailTopBar extends StatelessWidget implements PreferredSizeWidget 
                         padding: EdgeInsets.only(top: responsiveFontSize(context, 1.5)),
                         child: Text(
                           chapterText!,
-                          style: AppFonts.titleSmall(color: iconColor.withOpacity(0.8)).copyWith( // Warna "agak abu-abu"
+                          style: AppFonts.titleSmall(color: iconColor.withOpacity(0.8))?.copyWith(
                             fontSize: responsiveFontSize(context, 10),
                             fontWeight: FontWeight.w400,
                           ),
@@ -88,14 +91,14 @@ class CustomDetailTopBar extends StatelessWidget implements PreferredSizeWidget 
                           maxLines: 1,
                         ),
                       ),
-                    if (bookAuthor != null && bookAuthor!.isNotEmpty && (chapterText == null || chapterText!.isEmpty)) // SizedBox hanya jika author ada DAN chapterText tidak ada
+                    if (bookAuthor != null && bookAuthor!.isNotEmpty && (chapterText == null || chapterText!.isEmpty))
                       SizedBox(height: responsiveFontSize(context, 1)),
                     if (bookAuthor != null && bookAuthor!.isNotEmpty)
                       Padding(
                         padding: EdgeInsets.only(top: (chapterText != null && chapterText!.isNotEmpty) ? responsiveFontSize(context, 1.5) : responsiveFontSize(context, 1)),
                         child: Text(
                           bookAuthor!,
-                          style: AppFonts.titleSmall(color: iconColor.withOpacity(0.8)).copyWith( // Warna "agak abu-abu"
+                          style: AppFonts.titleSmall(color: iconColor.withOpacity(0.8))?.copyWith(
                             fontSize: responsiveFontSize(context, 11),
                             fontWeight: FontWeight.w400,
                           ),

@@ -7,6 +7,7 @@ import 'package:nover/src/models/book_detail.dart'; // <-- IMPORT BARU
 import 'package:nover/src/services/api_service.dart';
 import 'package:nover/src/utils/translation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:nover/src/models/chapter.dart'; // Pastikan import ini ada
 import 'dart:developer' as developer;
 
 class BookRepository {
@@ -143,8 +144,8 @@ class BookRepository {
     }
   }
 
-  // --- FUNGSI BARU UNTUK MENGAMBIL DETAIL BUKU ---
-  Future<BookDetail> getBookDetail(int bookId) async {
+  // --- FUNGSI BARU UNTUK MENGAMBIL DETAIL BUKU SAYA(PRIBADI) ---
+  Future<BookDetail> getMyBookDetail(int bookId) async {
     try {
       final endpoint = ApiConstants.getBookDetail(bookId); // Gunakan endpoint dinamis
       final response = await _apiService.get(endpoint);
@@ -160,6 +161,73 @@ class BookRepository {
     } catch (e) {
       developer.log('Error tak terduga saat mengambil detail buku: $e', name: 'BookRepository');
       throw Exception('Gagal memuat detail buku.');
+    }
+  }
+
+  // --- FUNGSI BARU UNTUK MENGAMBIL DETAIL BUKU UMUM ---
+  Future<BookDetail> getBookDetail(int bookId) async {
+    try {
+      final endpoint = ApiConstants.getBookDetailPublic(bookId); // Gunakan endpoint baru
+      final response = await _apiService.get(endpoint);
+
+      if (response.statusCode == 200 && response.data != null) {
+        return BookDetail.fromJson(response.data);
+      } else {
+        throw Exception('Gagal memuat detail buku.');
+      }
+    } on DioException catch (e) {
+      developer.log('DioException saat mengambil detail buku: ${e.message}', name: 'BookRepository');
+      throw Exception('Gagal terhubung ke server.');
+    } catch (e) {
+      developer.log('Error tak terduga saat mengambil detail buku: $e', name: 'BookRepository');
+      throw Exception('Terjadi kesalahan tidak terduga.');
+    }
+  }
+
+  // --- FUNGSI BARU UNTUK MENGAMBIL DAFTAR BUKU UMUM ---
+  Future<List<Book>> getBooks({int page = 1, int limit = 10}) async {
+    try {
+      final response = await _apiService.get(
+        ApiConstants.getBooksEndpoint,
+        queryParameters: {
+          'page': page,
+          'limit': limit,
+        },
+      );
+
+      // Sesuaikan key 'books' dengan response API Anda yang sebenarnya
+      if (response.statusCode == 200 && response.data['books'] is List) {
+        final List<dynamic> bookData = response.data['books'];
+        return bookData.map((json) => Book.fromJson(json)).toList();
+      } else {
+        throw Exception('Format response tidak valid saat memuat buku.');
+      }
+    } on DioException {
+      rethrow;
+    } catch (e) {
+      developer.log('Error tak terduga saat mengambil buku: $e', name: 'BookRepository');
+      throw Exception('Gagal memuat daftar buku.');
+    }
+  }
+
+  /// Mengambil detail lengkap sebuah chapter, termasuk kontennya.
+  Future<Chapter> getChapterDetail(int chapterId) async {
+    try {
+      final endpoint = ApiConstants.getChapterDetail(chapterId);
+      final response = await _apiService.get(endpoint);
+
+      // Asumsi response API adalah objek chapter tunggal
+      if (response.statusCode == 200 && response.data != null) {
+        return Chapter.fromJson(response.data);
+      } else {
+        throw Exception('Gagal memuat konten chapter.');
+      }
+    } on DioException catch (e) {
+      developer.log('DioException saat mengambil detail chapter: ${e.message}', name: 'BookRepository');
+      throw Exception('Gagal terhubung ke server.');
+    } catch (e) {
+      developer.log('Error tak terduga saat mengambil detail chapter: $e', name: 'BookRepository');
+      throw Exception('Terjadi kesalahan tidak terduga.');
     }
   }
 }

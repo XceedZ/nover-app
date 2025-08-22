@@ -5,7 +5,8 @@ class Chapter {
   final int totalViews;
   final String createDatetime;
   final int chapterOrder;
-  // Tambahkan properti lain jika diperlukan
+  // FIX: Tambahkan properti content yang opsional
+  final String? content;
 
   Chapter({
     required this.chapterId,
@@ -14,8 +15,11 @@ class Chapter {
     required this.totalViews,
     required this.createDatetime,
     required this.chapterOrder,
+    // FIX: Tambahkan di konstruktor
+    this.content,
   });
 
+  // FIX: Perbarui factory fromJson
   factory Chapter.fromJson(Map<String, dynamic> json) {
     return Chapter(
       chapterId: json['chapterId'] as int,
@@ -24,6 +28,30 @@ class Chapter {
       totalViews: json['totalViews'] ?? 0,
       createDatetime: json['createDatetime'] ?? '',
       chapterOrder: json['chapterOrder'] ?? 0,
+      // API detail akan punya 'content', tapi list tidak.
+      // Jadi kita ambil jika ada.
+      content: json['content'],
+    );
+  }
+
+  // FIX: Tambahkan metode copyWith untuk imutabilitas
+  Chapter copyWith({
+    int? chapterId,
+    String? title,
+    int? coinCost,
+    int? totalViews,
+    String? createDatetime,
+    int? chapterOrder,
+    String? content,
+  }) {
+    return Chapter(
+      chapterId: chapterId ?? this.chapterId,
+      title: title ?? this.title,
+      coinCost: coinCost ?? this.coinCost,
+      totalViews: totalViews ?? this.totalViews,
+      createDatetime: createDatetime ?? this.createDatetime,
+      chapterOrder: chapterOrder ?? this.chapterOrder,
+      content: content ?? this.content,
     );
   }
 }

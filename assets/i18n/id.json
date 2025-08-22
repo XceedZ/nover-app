@@ -217,7 +217,8 @@
     "edit": "Ubah",
     "remove": "Hapus",
     "searchChapter": "Cari Bab",
-    "allChapters": "Semua Bab"
+    "allChapters": "Semua Bab",
+    "chapter": "Bab"
   },
   "error": {
     "invalid_credentials": "Login gagal. Periksa kembali nama pengguna dan kata sandi Anda.",

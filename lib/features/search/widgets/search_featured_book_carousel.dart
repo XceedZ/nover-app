@@ -1,11 +1,12 @@
 // lib/features/search/widgets/search_featured_book_carousel.dart
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:nover/src/utils/app_fonts.dart';
 import 'package:nover/src/utils/ui_helpers.dart';
-import 'package:nover/features/home/screens/home_screen_content.dart' show Book;
+import 'package:nover/src/models/book.dart'; // UBAH: Import model dari sumber yang benar
 import 'package:nover/src/widgets/book_stats_row_widget.dart';
 import 'package:remixicon/remixicon.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 
 class SearchFeaturedBookCarousel extends StatefulWidget {
   final List<Book> books;
@@ -29,11 +30,25 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
   double _pageOffset = 0.0;
 
   final double _carouselCoverBaseHeight = 250.0;
+  double _carouselCoverHeight = 250.0;
+  double _carouselCoverWidth = 250.0 * (2.0/3.0);
 
   @override
   void initState() {
     super.initState();
     _initializePageControllerAndOffset();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final newCoverHeight = responsiveFontSize(context, _carouselCoverBaseHeight);
+        final newCoverWidth = newCoverHeight * (2.0 / 3.0);
+        if (_carouselCoverHeight != newCoverHeight || _carouselCoverWidth != newCoverWidth) {
+          setState(() {
+            _carouselCoverHeight = newCoverHeight;
+            _carouselCoverWidth = newCoverWidth;
+          });
+        }
+      }
+    });
   }
 
   void _initializePageControllerAndOffset() {
@@ -61,8 +76,9 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
   @override
   void didUpdateWidget(covariant SearchFeaturedBookCarousel oldWidget) {
     super.didUpdateWidget(oldWidget);
+    // UBAH: Menggunakan bookId
     bool booksHaveChanged = widget.books.length != oldWidget.books.length ||
-        widget.books.map((b) => b.id).join(',') != oldWidget.books.map((b) => b.id).join(',');
+        widget.books.map((b) => b.bookId).join(',') != oldWidget.books.map((b) => b.bookId).join(',');
 
     if (booksHaveChanged) {
       _pageController.dispose();
@@ -82,11 +98,18 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
     super.dispose();
   }
 
+  Widget _buildCarouselImageErrorWidget(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceVariant,
+        borderRadius: BorderRadius.circular(12.0),
+      ),
+      child: Icon(Remix.image_line, size: responsiveFontSize(context, 50), color: Theme.of(context).colorScheme.onSurfaceVariant),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final double carouselCoverHeight = responsiveFontSize(context, _carouselCoverBaseHeight);
-    final double carouselCoverWidth = carouselCoverHeight * (2.0 / 3.0);
-
     if (widget.books.isEmpty) {
       return Padding(
         padding: EdgeInsets.all(responsiveFontSize(context, 20)),
@@ -99,10 +122,10 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
       );
     }
 
+    final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
     int displayPageIndex = _pageOffset.round().clamp(0, widget.books.length - 1);
     Book currentBook = widget.books[displayPageIndex];
-
-    double pageViewHeight = carouselCoverHeight + responsiveFontSize(context, 40);
+    double pageViewHeight = _carouselCoverHeight + responsiveFontSize(context, 40);
 
     return Container(
       padding: EdgeInsets.symmetric(vertical: responsiveFontSize(context, 10)),
@@ -123,15 +146,9 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
               },
               itemBuilder: (context, index) {
                 final book = widget.books[index];
-                double scale;
-                double opacity;
-                double verticalOffset;
-
-                double pageDistance = (_pageOffset - index).abs();
-
-                scale = (1 - (pageDistance * 0.22)).clamp(0.70, 1.0);
-                opacity = (1 - (pageDistance * 0.6)).clamp(0.3, 1.0);
-                verticalOffset = pageDistance * responsiveFontSize(context, 25);
+                double scale = (1 - ((_pageOffset - index).abs() * 0.22)).clamp(0.70, 1.0);
+                double opacity = (1 - ((_pageOffset - index).abs() * 0.6)).clamp(0.3, 1.0);
+                double verticalOffset = (_pageOffset - index).abs() * responsiveFontSize(context, 25);
 
                 return Center(
                   child: Transform.translate(
@@ -143,8 +160,8 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
                         child: GestureDetector(
                           onTap: () => widget.onBookTap(book),
                           child: Container(
-                            width: carouselCoverWidth,
-                            height: carouselCoverHeight,
+                            width: _carouselCoverWidth,
+                            height: _carouselCoverHeight,
                             decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12.0),
                                 boxShadow: [
@@ -158,21 +175,16 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
                                 ]
                             ),
                             child: Hero(
-                              tag: 'search_carousel_book_${book.id}_$index',
+                              tag: 'search_carousel_book_${book.bookId}_$index',
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(12.0),
-                                child: Image.network(
-                                  book.imageUrl,
+                                child: CachedNetworkImage(
+                                  imageUrl: book.coverImageUrl,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[300],
-                                        borderRadius: BorderRadius.circular(10.0),
-                                      ),
-                                      child: Icon(Remix.image_line, size: responsiveFontSize(context, 50), color: Colors.grey[500]),
-                                    );
-                                  },
+                                  memCacheHeight: (_carouselCoverHeight * devicePixelRatio).round(),
+                                  memCacheWidth: (_carouselCoverWidth * devicePixelRatio).round(),
+                                  placeholder: (context, url) => Shimmer.fromColors(baseColor: Colors.grey[300]!, highlightColor: Colors.grey[100]!, child: Container(color: Theme.of(context).colorScheme.surfaceVariant)),
+                                  errorWidget: (context, url, error) => _buildCarouselImageErrorWidget(context),
                                 ),
                               ),
                             ),
@@ -186,14 +198,13 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
             ),
           ),
           SizedBox(height: responsiveFontSize(context, 12)),
-
           Padding(
             padding: EdgeInsets.symmetric(horizontal: responsiveFontSize(context, 20)),
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
               transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
               child: Column(
-                key: ValueKey<String>("detail_search_page_${currentBook.id}"),
+                key: ValueKey<int>(currentBook.bookId),
                 children: [
                   Text(
                     currentBook.title,
@@ -207,38 +218,26 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
                   ),
                   SizedBox(height: responsiveFontSize(context, 6)),
                   Text(
-                    currentBook.author,
+                    currentBook.author ?? '',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.montserrat(
-                      fontSize: responsiveFontSize(context, 13),
-                      color: widget.onSectionColor.withOpacity(0.75),
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: AppFonts.bodyMedium(color: widget.onSectionColor.withOpacity(0.75))?.copyWith(fontWeight: FontWeight.w500),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: responsiveFontSize(context, 16)),
-
-                  // --- PERUBAHAN DI SINI ---
-                  // Mengganti BookStatsRowWidget lama dengan komposisi widget baru
                   StatsRowContainer(
                     children: [
-                      StatItem(value: currentBook.pages.toString(), label: "Chapters"),
+                      StatItem(value: currentBook.totalViews.toString(), label: "Views"),
                       const StatDivider(),
-                      StatItem(value: currentBook.language, label: "Language"),
+                      StatItem(value: currentBook.status.toUpperCase(), label: "Status"),
                       const StatDivider(),
-                      StatItem(value: currentBook.rating.toStringAsFixed(1), label: "Rating"),
+                      StatItem(value: currentBook.ratingAverage.toStringAsFixed(1), label: "Rating"),
                     ],
                   ),
-
                   SizedBox(height: responsiveFontSize(context, 16)),
                   Text(
                     currentBook.description,
-                    style: GoogleFonts.montserrat(
-                      fontSize: responsiveFontSize(context, 12),
-                      color: widget.onSectionColor.withOpacity(0.7),
-                      height: 1.4,
-                    ),
+                    style: AppFonts.bodySmall(color: widget.onSectionColor.withOpacity(0.7))?.copyWith(height: 1.4),
                     maxLines: 3,
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.ellipsis,

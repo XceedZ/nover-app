@@ -1,7 +1,6 @@
 // lib/features/profile/screens/profile_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:nover/features/auth/screens/welcome_screen.dart';
 import 'package:nover/src/repositories/auth_repository.dart';
@@ -15,7 +14,7 @@ import 'package:nover/main.dart';
 import 'coin_details_screen.dart';
 import 'package:nover/features/event_center/screens/event_center_screen.dart';
 import 'package:nover/features/author/screens/became_author_screen.dart';
-import 'package:nover/features/posts/screens/my_posts_screen.dart'; // <-- IMPORT BARU
+import 'package:nover/features/posts/screens/my_posts_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -25,6 +24,7 @@ class ProfileScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    // Variabel warna dan gaya
     final onSurfaceColor = colorScheme.onSurface;
     final subtleTextColor = theme.textTheme.bodySmall?.color ?? Colors.grey.shade600;
     final balanceCardBackgroundColor = theme.brightness == Brightness.light
@@ -107,17 +107,8 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context, ThemeData theme, bool isLoggedIn, Map<String, dynamic>? user) {
-    if (!isLoggedIn || user == null) return const SizedBox.shrink();
-
-    Map<String, dynamic>? userData;
-    if (user['user'] is Map<String, dynamic>) {
-      userData = user['user'];
-    } else {
-      userData = user;
-    }
-
-    if (userData == null) return const SizedBox.shrink();
+  Widget _buildProfileHeader(BuildContext context, ThemeData theme, bool isLoggedIn, Map<String, dynamic>? userData) {
+    if (!isLoggedIn || userData == null) return const SizedBox.shrink();
 
     final dicebearRepo = DicebearRepository();
     final colorScheme = theme.colorScheme;
@@ -176,17 +167,17 @@ class ProfileScreen extends StatelessWidget {
           SizedBox(height: responsiveFontSize(context, 24)),
           Text(
             tl('label.accStatus'),
-            style: GoogleFonts.montserrat(fontSize: responsiveFontSize(context, 12), color: theme.colorScheme.onSurface.withOpacity(0.6), fontWeight: FontWeight.w600, letterSpacing: 0.5),
+            style: AppFonts.labelSmall(color: theme.colorScheme.onSurface.withOpacity(0.6))?.copyWith(fontWeight: FontWeight.w600),
           ),
           SizedBox(height: responsiveFontSize(context, 4)),
           Text(
             tl('label.youNotLoggedIn'),
-            style: GoogleFonts.montserrat(fontSize: responsiveFontSize(context, 28), color: theme.colorScheme.onSurface, fontWeight: FontWeight.bold),
+            style: AppFonts.headlineMediumM(color: theme.colorScheme.onSurface),
           ),
           SizedBox(height: responsiveFontSize(context, 16)),
           Text(
             tl('label.loginDesc'),
-            style: GoogleFonts.montserrat(fontSize: responsiveFontSize(context, 14), color: theme.colorScheme.onSurface.withOpacity(0.7), height: 1.5),
+            style: AppFonts.bodyMedium(color: theme.colorScheme.onSurface.withOpacity(0.7))?.copyWith(height: 1.5),
           ),
           SizedBox(height: responsiveFontSize(context, 24)),
           SizedBox(
@@ -201,7 +192,7 @@ class ProfileScreen extends StatelessWidget {
               ),
               child: Text(
                 tl('label.login'),
-                style: GoogleFonts.montserrat(fontWeight: FontWeight.bold, fontSize: responsiveFontSize(context, 15)),
+                style: AppFonts.titleSmall(color: theme.colorScheme.onPrimary)?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -223,7 +214,7 @@ class ProfileScreen extends StatelessWidget {
             children: [
               Text(
                 tl('profile.balance.remainingBalance'),
-                style: GoogleFonts.montserrat(fontSize: responsiveFontSize(context, 14), fontWeight: FontWeight.w500, color: subtleOnCardColor),
+                style: AppFonts.titleSmall(color: subtleOnCardColor)?.copyWith(fontWeight: FontWeight.w500),
               ),
               ElevatedButton(
                 onPressed: () => print('Top Up tapped'),
@@ -231,11 +222,10 @@ class ProfileScreen extends StatelessWidget {
                   backgroundColor: buttonBgColor,
                   foregroundColor: buttonTextColor,
                   padding: EdgeInsets.symmetric(horizontal: responsiveFontSize(context, 20), vertical: responsiveFontSize(context, 10)),
-                  textStyle: GoogleFonts.montserrat(fontSize: responsiveFontSize(context, 13), fontWeight: FontWeight.w600),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(responsiveFontSize(context, 20))),
                   elevation: 2,
                 ),
-                child: Text(tl('profile.balance.topUpButton')),
+                child: Text(tl('profile.balance.topUpButton'), style: AppFonts.bodySmall(color: buttonTextColor)?.copyWith(fontWeight: FontWeight.w600)),
               ),
             ],
           ),
@@ -249,7 +239,7 @@ class ProfileScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('37', style: GoogleFonts.montserrat(fontSize: responsiveFontSize(context, 36), fontWeight: FontWeight.bold, color: onCardColor)),
+                  Text('37', style: AppFonts.displayLargeM(color: onCardColor)),
                   SizedBox(width: responsiveFontSize(context, 4)),
                   Padding(
                     padding: EdgeInsets.only(top: responsiveFontSize(context, 4)),
@@ -276,7 +266,7 @@ class ProfileScreen extends StatelessWidget {
                 Expanded(
                   child: Text(
                     tl('profile.balance.bonusCoinsExpirationWarning'),
-                    style: GoogleFonts.montserrat(fontSize: responsiveFontSize(context, 11), color: warningTextColor, fontWeight: FontWeight.w500),
+                    style: AppFonts.labelSmall(color: warningTextColor)?.copyWith(fontWeight: FontWeight.w500),
                   ),
                 ),
               ],
@@ -292,9 +282,9 @@ class ProfileScreen extends StatelessWidget {
       children: [
         Icon(icon, size: responsiveFontSize(context, 22), color: iconColor),
         SizedBox(width: responsiveFontSize(context, 12)),
-        Text(label, style: GoogleFonts.montserrat(fontSize: responsiveFontSize(context, 14.5), fontWeight: FontWeight.w500, color: onCardColor)),
+        Text(label, style: AppFonts.titleMedium(color: onCardColor)),
         const Spacer(),
-        Text(value, style: GoogleFonts.montserrat(fontSize: responsiveFontSize(context, 14.5), fontWeight: FontWeight.w600, color: onCardColor)),
+        Text(value, style: AppFonts.titleMedium(color: onCardColor)?.copyWith(fontWeight: FontWeight.w600)),
       ],
     );
   }
@@ -315,35 +305,8 @@ class ProfileScreen extends StatelessWidget {
         children: [
           _buildMenuListItem(context, Remix.calendar_event_line, tl('eventCenter'), onSurfaceColor, subtleTextColor, dividerColor, trailing: _buildBadge(context, tl('freeCoins'), accentBadgeColor, Colors.white), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const EventCenterScreen()))),
           _buildMenuListItem(context, Remix.coupon_3_line, tl('myCoupons'), onSurfaceColor, subtleTextColor, dividerColor),
-          // --- PERUBAHAN DI SINI ---
-          _buildMenuListItem(
-            context,
-            Remix.archive_line,
-            tl('myPosts'),
-            onSurfaceColor,
-            subtleTextColor,
-            dividerColor,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const MyPostsScreen()),
-              );
-            },
-          ),
-          // ------------------------
-          _buildMenuListItem(
-            context,
-            Remix.quill_pen_line,
-            tl('becomeAuthor'),
-            onSurfaceColor,
-            subtleTextColor,
-            dividerColor,
-            trailing: _buildBadge(context, tl('new'), primaryColor, onPrimaryColor),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const BecameAuthorScreen()),
-            ),
-          ),
+          _buildMenuListItem(context, Remix.archive_line, tl('myPosts'), onSurfaceColor, subtleTextColor, dividerColor, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const MyPostsScreen()))),
+          _buildMenuListItem(context, Remix.quill_pen_line, tl('becomeAuthor'), onSurfaceColor, subtleTextColor, dividerColor, trailing: _buildBadge(context, tl('new'), primaryColor, onPrimaryColor), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BecameAuthorScreen()))),
           _buildMenuListItem(context, Remix.feedback_line, tl('feedback'), onSurfaceColor, subtleTextColor, dividerColor),
           _buildMenuListItem(context, Remix.settings_line, tl('settings'), onSurfaceColor, subtleTextColor, dividerColor, isLast: !isLoggedIn, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen()))),
         ],
@@ -357,7 +320,7 @@ class ProfileScreen extends StatelessWidget {
       decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(responsiveFontSize(context, 10))),
       child: Text(
         text,
-        style: GoogleFonts.montserrat(fontSize: responsiveFontSize(context, 10), color: textColor, fontWeight: FontWeight.w600),
+        style: AppFonts.labelTiny(color: textColor),
       ),
     );
   }
@@ -375,7 +338,7 @@ class ProfileScreen extends StatelessWidget {
               Icon(icon, size: responsiveFontSize(context, 22), color: onSurfaceColor),
               SizedBox(width: responsiveFontSize(context, 16)),
               Expanded(
-                child: Text(title, style: AppFonts.titleMedium(color: onSurfaceColor).copyWith(fontSize: responsiveFontSize(context, 14.5))),
+                child: Text(title, style: AppFonts.titleMedium(color: onSurfaceColor)),
               ),
               if (trailing != null) ...[trailing, SizedBox(width: responsiveFontSize(context, 8))],
               if (onTap != null)

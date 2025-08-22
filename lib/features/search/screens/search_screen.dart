@@ -1,10 +1,9 @@
 // lib/features/search/screens/search_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:nover/src/utils/app_fonts.dart';
 import 'package:nover/src/utils/ui_helpers.dart';
-import 'package:nover/features/home/screens/home_screen_content.dart' show Book;
+import 'package:nover/src/models/book.dart';
 import 'package:nover/features/books/screens/book_detail_screen.dart';
 import 'package:nover/src/widgets/book_stats_row_widget.dart';
 import 'package:remixicon/remixicon.dart';
@@ -12,7 +11,7 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 
-// --- Definisi BookCard dan HorizontalBookList (Tidak ada perubahan) ---
+// --- Definisi BookCard dan HorizontalBookList ---
 class HorizontalBookList extends StatelessWidget {
   final List<Book> books;
   final double? listHeight;
@@ -66,12 +65,18 @@ class BookCard extends StatelessWidget {
     Color authorColor = Theme.of(context).colorScheme.onSurfaceVariant;
 
     return Hero(
-      tag: 'bookCover_${book.id}',
+      tag: 'bookCover_${book.bookId}',
       child: Material(
         type: MaterialType.transparency,
         child: GestureDetector(
           onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => BookDetailScreen(book: book)));
+            // --- PERBAIKAN: Sesuaikan pemanggilan dengan konstruktor baru ---
+            Navigator.push(context, MaterialPageRoute(
+                builder: (context) => BookDetailScreen(
+                  bookId: book.bookId,
+                  initialBookData: book,
+                ))
+            );
           },
           child: SizedBox(
             width: cardWidth,
@@ -85,7 +90,7 @@ class BookCard extends StatelessWidget {
                     height: imageHeight,
                     width: cardWidth,
                     child: CachedNetworkImage(
-                      imageUrl: book.imageUrl,
+                      imageUrl: book.coverImageUrl,
                       fit: BoxFit.cover,
                       memCacheHeight: (imageHeight * devicePixelRatio).round(),
                       memCacheWidth: (cardWidth * devicePixelRatio).round(),
@@ -105,13 +110,23 @@ class BookCard extends StatelessWidget {
                 SizedBox(height: responsiveFontSize(context, 10)),
                 Padding(
                   padding: EdgeInsets.symmetric(horizontal: responsiveFontSize(context, 2)),
-                  child: Text(book.title, style: GoogleFonts.montserrat(fontSize: responsiveFontSize(context, 13), fontWeight: FontWeight.w600, color: titleColor), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  child: Text(
+                      book.title,
+                      style: AppFonts.bodyMedium(color: titleColor)?.copyWith(fontWeight: FontWeight.w600),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis
+                  ),
                 ),
                 SizedBox(height: responsiveFontSize(context, 3)),
-                if (book.author.isNotEmpty)
+                if (book.author != null && book.author!.isNotEmpty)
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: responsiveFontSize(context, 2)),
-                    child: Text(book.author, style: GoogleFonts.montserrat(fontSize: responsiveFontSize(context, 11), color: authorColor, fontWeight: FontWeight.w400), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    child: Text(
+                        book.author!,
+                        style: AppFonts.bodySmall(color: authorColor),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis
+                    ),
                   ),
               ],
             ),
@@ -121,8 +136,6 @@ class BookCard extends StatelessWidget {
     );
   }
 }
-// --- Akhir Definisi ---
-
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -132,24 +145,28 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  // ... (Logika State SearchScreen tidak ada perubahan)
   final TextEditingController _searchController = TextEditingController();
   List<Book> _displayBooksInCarousel = [];
   bool _isLoading = false;
   String _currentQuery = "";
   List<Book> _trendingNovelsData = [];
+
+  // Data dummy disesuaikan dengan model Book yang benar
   final List<Book> _allBooksForDemo = [
-    Book(id: 301, title: "The Silent Patient", chapter: "Preview", author: "Alex Michaelides",
-        imageUrl: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiue8RWfDLFk_oKlNDz1HS6MCagKJ9WG3Hwz8rlyRNyt_tkaZNSgrzXa6P2996vgQGQHIjO9FY5MgtxJw49BmQcBHHjHl0auO3SJ_JOL3P-T0LY00Bt9n_lexYL-rd23VjcMm8pT6pBqhk_TTMTIAymW6wtwgF0bgx0lASyvIkGDzCmopSJ2OfOk1Ov/s1000/81dkqO5LAQL._AC_UF1000,1000_QL80_.jpg",
-        rating: 4.8, pages: 336, language: "Eng",
-        description: "Alicia Berenson’s life is seemingly perfect. A famous painter married to an in-demand fashion photographer, she lives in a grand house with big windows overlooking a park in one of London’s most desirable areas.",
-        genres: ["Thriller", "Mystery"]),
-    Book(id: 302, title: "Atomic Habits", chapter: "Preview", author: "James Clear",
-        imageUrl: "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1535115320i/40121378.jpg",
-        rating: 4.9, pages: 320, language: "Eng",
-        description: "No matter your goals, Atomic Habits offers a proven framework for improving--every day. James Clear, one of the world's leading experts on habit formation, reveals practical strategies that will teach you exactly how to form good habits, break bad ones, and master the tiny behaviors that lead to remarkable results.",
-        genres: ["Self-help", "Productivity"]),
+    Book(
+        bookId: 301, title: "The Silent Patient", status: "P", author: "Alex Michaelides",
+        coverImageUrl: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiue8RWfDLFk_oKlNDz1HS6MCagKJ9WG3Hwz8rlyRNyt_tkaZNSgrzXa6P2996vgQGQHIjO9FY5MgtxJw49BmQcBHHjHl0auO3SJ_JOL3P-T0LY00Bt9n_lexYL-rd23VjcMm8pT6pBqhk_TTMTIAymW6wtwgF0bgx0lASyvIkGDzCmopSJ2OfOk1Ov/s1000/81dkqO5LAQL._AC_UF1000,1000_QL80_.jpg",
+        ratingAverage: 4.8, description: "Alicia Berenson’s life is seemingly perfect...",
+        genres: "Thriller, Mystery", createDatetime: DateTime.now().toIso8601String(), updateDatetime: DateTime.now().toIso8601String(), totalViews: 10200
+    ),
+    Book(
+        bookId: 302, title: "Atomic Habits", status: "C", author: "James Clear",
+        coverImageUrl: "https://images-na.ssl-images-amazon.com/images/S/compressed.photo.goodreads.com/books/1535115320i/40121378.jpg",
+        ratingAverage: 4.9, description: "No matter your goals, Atomic Habits offers a proven framework for improving--every day.",
+        genres: "Self-help, Productivity", createDatetime: DateTime.now().toIso8601String(), updateDatetime: DateTime.now().toIso8601String(), totalViews: 9870
+    ),
   ];
+
   @override
   void initState() {
     super.initState();
@@ -162,6 +179,7 @@ class _SearchScreenState extends State<SearchScreen> {
       }
     });
   }
+
   Future<void> _loadInitialData() async {
     if (mounted) setState(() => _isLoading = true);
     await Future.delayed(const Duration(milliseconds: 300));
@@ -169,11 +187,13 @@ class _SearchScreenState extends State<SearchScreen> {
     _displayBooksInCarousel = List.from(_allBooksForDemo);
     if (mounted) setState(() => _isLoading = false);
   }
+
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
+
   Future<void> _performSearch(String query) async {
     _currentQuery = query.trim();
     if (!mounted) return;
@@ -191,8 +211,8 @@ class _SearchScreenState extends State<SearchScreen> {
     if (_currentQuery.isNotEmpty) {
       results = _allBooksForDemo.where((book) {
         final titleMatch = book.title.toLowerCase().contains(_currentQuery.toLowerCase());
-        final authorMatch = book.author.toLowerCase().contains(_currentQuery.toLowerCase());
-        final genreMatch = book.genres.any((genre) => genre.toLowerCase().contains(_currentQuery.toLowerCase()));
+        final authorMatch = (book.author ?? '').toLowerCase().contains(_currentQuery.toLowerCase());
+        final genreMatch = (book.genres ?? '').toLowerCase().contains(_currentQuery.toLowerCase());
         return titleMatch || authorMatch || genreMatch;
       }).toList();
     } else {
@@ -206,22 +226,21 @@ class _SearchScreenState extends State<SearchScreen> {
       });
     }
   }
+
   bool _isColorDark(Color color) {
     return color.computeLuminance() < 0.5;
   }
 
   @override
   Widget build(BuildContext context) {
-    // ... (Logika build SearchScreen tidak ada perubahan)
     final ThemeData theme = Theme.of(context);
     final Color screenBackgroundColor = theme.colorScheme.background;
     final Color appBarBackgroundColor = theme.colorScheme.surface;
     final Color onAppBarColor = theme.colorScheme.onSurface;
     final Color onScreenTextColor = theme.colorScheme.onBackground;
-    final Brightness statusBarIconBrightness =
-    _isColorDark(appBarBackgroundColor) ? Brightness.light : Brightness.dark;
-    final Brightness statusBarBrightnessForApple =
-    _isColorDark(appBarBackgroundColor) ? Brightness.dark : Brightness.light;
+    final Brightness statusBarIconBrightness = _isColorDark(appBarBackgroundColor) ? Brightness.light : Brightness.dark;
+    final Brightness statusBarBrightnessForApple = _isColorDark(appBarBackgroundColor) ? Brightness.dark : Brightness.light;
+
     Widget bodyContent;
     if (_isLoading && _currentQuery.isNotEmpty && _displayBooksInCarousel.isEmpty) {
       bodyContent = Center(
@@ -234,12 +253,15 @@ class _SearchScreenState extends State<SearchScreen> {
       bodyContent = Column(
         children: [
           SearchFeaturedBookCarousel(
-            key: ValueKey("carousel_${_currentQuery}_${_displayBooksInCarousel.map((b)=>b.id).join()}"),
+            key: ValueKey("carousel_${_currentQuery}_${_displayBooksInCarousel.map((b)=>b.bookId).join()}"),
             books: _displayBooksInCarousel,
             onBookTap: (book) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => BookDetailScreen(book: book)),
+              // --- PERBAIKAN: Sesuaikan pemanggilan dengan konstruktor baru ---
+              Navigator.push(context, MaterialPageRoute(
+                  builder: (context) => BookDetailScreen(
+                    bookId: book.bookId,
+                    initialBookData: book,
+                  ))
               );
             },
             onSectionColor: onScreenTextColor,
@@ -262,10 +284,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     ? 'No results found for "$_currentQuery".\nPlease try a different keyword.'
                     : 'Search for books, authors, or genres.',
                 textAlign: TextAlign.center,
-                style: AppFonts.titleMedium(color: onScreenTextColor.withOpacity(0.6)).copyWith(
-                  fontSize: responsiveFontSize(context, 15),
-                  height: 1.5,
-                ),
+                style: AppFonts.titleMedium(color: onScreenTextColor.withOpacity(0.6))?.copyWith(height: 1.5),
               ),
             ),
           ),
@@ -273,6 +292,7 @@ class _SearchScreenState extends State<SearchScreen> {
         ],
       );
     }
+
     return Scaffold(
       backgroundColor: screenBackgroundColor,
       appBar: AppBar(
@@ -290,17 +310,11 @@ class _SearchScreenState extends State<SearchScreen> {
         title: TextField(
           controller: _searchController,
           autofocus: true,
-          style: AppFonts.titleMedium(color: onAppBarColor).copyWith(
-            fontSize: responsiveFontSize(context, 16),
-          ),
+          style: AppFonts.titleMedium(color: onAppBarColor),
           decoration: InputDecoration(
             hintText: "Search books, authors, genres...",
-            hintStyle: AppFonts.titleSmall(color: onAppBarColor.withOpacity(0.5)).copyWith(
-              fontSize: responsiveFontSize(context, 15),
-            ),
+            hintStyle: AppFonts.titleSmall(color: onAppBarColor.withOpacity(0.5)),
             border: InputBorder.none,
-            focusedBorder: InputBorder.none,
-            enabledBorder: InputBorder.none,
           ),
           onSubmitted: _performSearch,
         ),
@@ -338,18 +352,13 @@ class _SearchScreenState extends State<SearchScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.only(
-              left: responsiveFontSize(context, 16.0),
-              right: responsiveFontSize(context, 16.0),
-              top: responsiveFontSize(context, 10.0),
-              bottom: responsiveFontSize(context, 16.0)
+          padding: EdgeInsets.symmetric(
+              horizontal: responsiveFontSize(context, 16.0),
+              vertical: responsiveFontSize(context, 10.0)
           ),
           child: Text(
             'Trending Novel',
-            style: AppFonts.titleLarge(color: titleColor).copyWith(
-              fontSize: responsiveFontSize(context, 18),
-              fontWeight: FontWeight.w600,
-            ),
+            style: AppFonts.titleLarge(color: titleColor)?.copyWith(fontWeight: FontWeight.w600),
           ),
         ),
         HorizontalBookList(books: _trendingNovelsData),
@@ -359,9 +368,7 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
-
 class SearchFeaturedBookCarousel extends StatefulWidget {
-  // ... (properti tidak ada perubahan)
   final List<Book> books;
   final Function(Book) onBookTap;
   final Color onSectionColor;
@@ -377,13 +384,13 @@ class SearchFeaturedBookCarousel extends StatefulWidget {
 }
 
 class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel> {
-  // ... (logika state tidak ada perubahan)
   late PageController _pageController;
   int _currentPage = 0;
   double _pageOffset = 0.0;
   final double _carouselCoverBaseHeight = 250.0;
   double _carouselCoverHeight = 250.0;
   double _carouselCoverWidth = 250.0 * (2.0/3.0);
+
   @override
   void initState() {
     super.initState();
@@ -401,6 +408,7 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
       }
     });
   }
+
   void _initializePageControllerAndOffset() {
     int initialPage = 0;
     _currentPage = initialPage;
@@ -417,11 +425,12 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
       }
     });
   }
+
   @override
   void didUpdateWidget(covariant SearchFeaturedBookCarousel oldWidget) {
     super.didUpdateWidget(oldWidget);
     bool booksHaveChanged = widget.books.length != oldWidget.books.length ||
-        widget.books.map((b) => b.id).join(',') != oldWidget.books.map((b) => b.id).join(',');
+        widget.books.map((b) => b.bookId).join(',') != oldWidget.books.map((b) => b.bookId).join(',');
     if (booksHaveChanged) {
       int targetPage = 0;
       if (_pageController.hasClients && widget.books.isNotEmpty) {
@@ -431,25 +440,15 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
       _pageController.dispose();
       _currentPage = targetPage;
       _initializePageControllerAndOffset();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          final newCoverHeight = responsiveFontSize(context, _carouselCoverBaseHeight);
-          final newCoverWidth = newCoverHeight * (2.0 / 3.0);
-          if (_carouselCoverHeight != newCoverHeight || _carouselCoverWidth != newCoverWidth) {
-            setState(() {
-              _carouselCoverHeight = newCoverHeight;
-              _carouselCoverWidth = newCoverWidth;
-            });
-          }
-        }
-      });
     }
   }
+
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
   }
+
   Widget _buildCarouselImageErrorWidget(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
@@ -478,25 +477,17 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
           SizedBox(
             height: pageViewHeight,
             child: PageView.builder(
-              // ... (logika PageView.builder tidak ada perubahan)
               controller: _pageController,
               itemCount: widget.books.length,
               onPageChanged: (index) {
-                if (mounted) {
-                  setState(() {
-                    _currentPage = index;
-                  });
-                }
+                if (mounted) setState(() => _currentPage = index);
               },
               itemBuilder: (context, index) {
                 final book = widget.books[index];
-                double scale;
-                double opacity;
-                double verticalOffset;
-                double pageDistance = (_pageOffset - index).abs();
-                scale = (1 - (pageDistance * 0.25)).clamp(0.65, 1.0);
-                opacity = (1 - (pageDistance * 0.7)).clamp(0.1, 1.0);
-                verticalOffset = pageDistance * responsiveFontSize(context, 30);
+                double scale = (1 - ((_pageOffset - index).abs() * 0.25)).clamp(0.65, 1.0);
+                double opacity = (1 - ((_pageOffset - index).abs() * 0.7)).clamp(0.1, 1.0);
+                double verticalOffset = (_pageOffset - index).abs() * responsiveFontSize(context, 30);
+
                 return Center(
                   child: Transform.translate(
                     offset: Offset(0, verticalOffset),
@@ -512,34 +503,18 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
                             margin: EdgeInsets.symmetric(horizontal: responsiveFontSize(context, 3)),
                             decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12.0),
-                                boxShadow: [
-                                  if (scale > 0.95)
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 8,
-                                      spreadRadius: 0.2,
-                                      offset: const Offset(0, 3),
-                                    )
-                                ]
+                                boxShadow: [ if (scale > 0.95) BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 3)) ]
                             ),
                             child: Hero(
-                              tag: 'bookCover_${book.id}',
+                              tag: 'bookCover_${book.bookId}',
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(12.0),
                                 child: CachedNetworkImage(
-                                  imageUrl: book.imageUrl,
+                                  imageUrl: book.coverImageUrl,
                                   fit: BoxFit.cover,
                                   memCacheHeight: (_carouselCoverHeight * devicePixelRatio).round(),
                                   memCacheWidth: (_carouselCoverWidth * devicePixelRatio).round(),
-                                  placeholder: (context, url) => Shimmer.fromColors(
-                                    baseColor: Colors.grey[300]!,
-                                    highlightColor: Colors.grey[100]!,
-                                    child: Container(
-                                      width: _carouselCoverWidth,
-                                      height: _carouselCoverHeight,
-                                      color: Theme.of(context).colorScheme.surfaceVariant,
-                                    ),
-                                  ),
+                                  placeholder: (context, url) => Shimmer.fromColors(baseColor: Colors.grey[300]!, highlightColor: Colors.grey[100]!, child: Container(color: Theme.of(context).colorScheme.surfaceVariant)),
                                   errorWidget: (context, url, error) => _buildCarouselImageErrorWidget(context),
                                 ),
                               ),
@@ -560,52 +535,37 @@ class _SearchFeaturedBookCarouselState extends State<SearchFeaturedBookCarousel>
               duration: const Duration(milliseconds: 300),
               transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
               child: Column(
-                key: ValueKey<String>("detail_search_page_${currentBook.id}"),
+                key: ValueKey<int>(currentBook.bookId),
                 children: [
                   Text(
                     currentBook.title,
                     textAlign: TextAlign.center,
-                    style: AppFonts.headerStyle.copyWith(
-                      fontSize: responsiveFontSize(context, 18),
-                      color: widget.onSectionColor,
-                    ),
+                    style: AppFonts.headerStyle?.copyWith(fontSize: responsiveFontSize(context, 18), color: widget.onSectionColor),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: responsiveFontSize(context, 6)),
                   Text(
-                    currentBook.author,
+                    currentBook.author ?? '',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.montserrat(
-                      fontSize: responsiveFontSize(context, 13),
-                      color: widget.onSectionColor.withOpacity(0.75),
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: AppFonts.bodyMedium(color: widget.onSectionColor.withOpacity(0.75))?.copyWith(fontWeight: FontWeight.w500),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: responsiveFontSize(context, 16)),
-
-                  // --- PERUBAHAN DI SINI ---
-                  // Mengganti BookStatsRowWidget lama dengan komposisi widget baru
                   StatsRowContainer(
                     children: [
-                      StatItem(value: currentBook.pages.toString(), label: "Chapters"),
+                      StatItem(value: (currentBook.totalViews).toString(), label: "Views"),
                       const StatDivider(),
-                      StatItem(value: currentBook.language, label: "Language"),
+                      StatItem(value: currentBook.status, label: "Status"),
                       const StatDivider(),
-                      StatItem(value: currentBook.rating.toStringAsFixed(1), label: "Rating"),
+                      StatItem(value: currentBook.ratingAverage.toStringAsFixed(1), label: "Rating"),
                     ],
                   ),
-
                   SizedBox(height: responsiveFontSize(context, 16)),
                   Text(
                     currentBook.description,
-                    style: GoogleFonts.montserrat(
-                      fontSize: responsiveFontSize(context, 12),
-                      color: widget.onSectionColor.withOpacity(0.7),
-                      height: 1.4,
-                    ),
+                    style: AppFonts.bodySmall(color: widget.onSectionColor.withOpacity(0.7))?.copyWith(height: 1.4),
                     maxLines: 3,
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.ellipsis,

@@ -21,4 +21,8 @@ class ApiConstants {
   }
   static String createChapter(int bookId) => '/v1/books/$bookId/chapters';
   static String getBookDetail(int bookId) => '/v1/books/$bookId/detail';
+  static const String getBooksEndpoint = '/v1/books';
+  static String getBookDetailPublic(int bookId) => '/v1/books/$bookId';
+  static String getChapterDetail(int chapterId) => '/v1/chapters/$chapterId';
+
 }

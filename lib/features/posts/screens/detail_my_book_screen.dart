@@ -1,4 +1,5 @@
 // lib/features/posts/screens/detail_my_book_screen.dart
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:animations/animations.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -42,7 +43,7 @@ class _DetailMyBookScreenState extends State<DetailMyBookScreen> {
   Book? _currentBookState;
 
   bool _isDescriptionExpanded = false;
-  bool _isUpdatingStatus = false;
+  String? _loadingAction;
   Color _dynamicBackgroundColor = Colors.grey.shade800;
 
   @override
@@ -55,7 +56,7 @@ class _DetailMyBookScreenState extends State<DetailMyBookScreen> {
   }
 
   void _loadBookDetails() {
-    _bookDetailFuture = _bookRepository.getBookDetail(widget.bookId);
+    _bookDetailFuture = _bookRepository.getMyBookDetail(widget.bookId);
     _bookDetailFuture.then((bookDetail) {
       if (mounted) {
         setState(() {
@@ -77,8 +78,9 @@ class _DetailMyBookScreenState extends State<DetailMyBookScreen> {
   }
 
   Future<void> _handleStatusUpdate(String action) async {
-    if (_isUpdatingStatus || _currentBookState == null) return;
-    setState(() => _isUpdatingStatus = true);
+    if (_loadingAction != null || _currentBookState == null) return;
+
+    setState(() => _loadingAction = action);
 
     String newStatus;
     switch (action) {
@@ -87,7 +89,7 @@ class _DetailMyBookScreenState extends State<DetailMyBookScreen> {
       case 'hold': newStatus = 'H'; break;
       case 'complete': newStatus = 'C'; break;
       default:
-        setState(() => _isUpdatingStatus = false);
+        setState(() => _loadingAction = null);
         return;
     }
 
@@ -106,11 +108,13 @@ class _DetailMyBookScreenState extends State<DetailMyBookScreen> {
       }
     } finally {
       if (mounted) {
-        setState(() => _isUpdatingStatus = false);
+        setState(() => _loadingAction = null);
       }
     }
   }
 
+  // --- PERUBAHAN: Menghapus `Navigator.pop(context)` ---
+  // CustomPopupMenu yang baru akan menangani penutupan secara otomatis.
   void _showCustomMenu(Book book) {
     List<CustomMenuItem> menuItems = [
       CustomMenuItem(title: tl('settings'), icon: Remix.settings_3_line, onTap: () {}),
@@ -118,19 +122,18 @@ class _DetailMyBookScreenState extends State<DetailMyBookScreen> {
 
     switch (book.status) {
       case 'P':
-        menuItems.add(CustomMenuItem(title: tl('unpublish'), icon: Remix.forbid_2_line, isDanger: true, onTap: () { Navigator.pop(context); _handleStatusUpdate('unpublish'); }));
+        menuItems.add(CustomMenuItem(title: tl('unpublish'), icon: Remix.forbid_2_line, isDanger: true, onTap: () => _handleStatusUpdate('unpublish')));
         break;
       case 'D':
-        menuItems.add(CustomMenuItem(title: tl('publishNow'), icon: Remix.global_line, onTap: () { Navigator.pop(context); _handleStatusUpdate('publish'); }));
+        menuItems.add(CustomMenuItem(title: tl('publishNow'), icon: Remix.global_line, onTap: () => _handleStatusUpdate('publish')));
         break;
       case 'H':
-        menuItems.add(CustomMenuItem(title: tl('publishNow'), icon: Remix.global_line, onTap: () { Navigator.pop(context); _handleStatusUpdate('publish'); }));
+        menuItems.add(CustomMenuItem(title: tl('publishNow'), icon: Remix.global_line, onTap: () => _handleStatusUpdate('publish')));
         break;
     }
 
     if (book.status == 'D' || book.status == 'H') {
       menuItems.add(CustomMenuItem(title: tl('delete'), icon: Remix.delete_bin_line, isDanger: true, onTap: (){
-        Navigator.pop(context);
         // TODO: Tampilkan dialog konfirmasi sebelum hapus
       }));
     }
@@ -208,24 +211,18 @@ class _DetailMyBookScreenState extends State<DetailMyBookScreen> {
           IconButton(key: _menuButtonKey, icon: Icon(Remix.more_2_fill, color: animatedIconColor), onPressed: () => _showCustomMenu(book)),
         ],
       ),
-      floatingActionButton:OpenContainer(
+      floatingActionButton: OpenContainer<bool>(
         transitionType: ContainerTransitionType.fadeThrough,
-        openColor: theme.scaffoldBackgroundColor,
-        closedColor: colorScheme.primary,
-        closedElevation: 0,
-        openElevation: 0,
-        closedShape: const CircleBorder(),
-        openShape: const RoundedRectangleBorder(),
-        transitionDuration: const Duration(milliseconds: 350),
         openBuilder: (context, _) => CreateChapterScreen(bookId: widget.bookId, bookTitle: book.title),
-        closedBuilder: (context, openContainer) => FloatingActionButton(
-          onPressed: openContainer,
-          backgroundColor: colorScheme.primary,
-          foregroundColor: colorScheme.onPrimary,
-          tooltip: tl('addChapter'),
-          heroTag: null,
-          child: const Icon(Remix.add_line),
-        ),
+        onClosed: (result) {
+          if (result == true) {
+            setState(() => _loadBookDetails());
+          }
+        },
+        closedElevation: 6.0,
+        closedShape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(16.0))),
+        closedColor: colorScheme.primary,
+        closedBuilder: (context, openContainer) => FloatingActionButton(onPressed: openContainer, backgroundColor: colorScheme.primary, foregroundColor: colorScheme.onPrimary, tooltip: tl('addChapter'), heroTag: null, child: const Icon(Remix.add_line)),
       ),
       body: SingleChildScrollView(
         controller: _scrollController,
@@ -352,7 +349,7 @@ class _DetailMyBookScreenState extends State<DetailMyBookScreen> {
         iconColor = colorScheme.primary;
         title = tl('draft');
         message = tl('statusCardDraftMessage');
-        actionButtons.add(Expanded(child: _buildActionButton(title: tl('publishNow'), icon: Remix.global_line, onPressed: () => _handleStatusUpdate('publish'), isPrimary: true)));
+        actionButtons.add(Expanded(child: _buildActionButton(title: tl('publishNow'), icon: Remix.global_line, action: 'publish', isPrimary: true)));
         break;
       case 'P':
         icon = Remix.global_line;
@@ -360,9 +357,9 @@ class _DetailMyBookScreenState extends State<DetailMyBookScreen> {
         title = tl('published');
         message = tl('statusCardPublishedMessage');
         actionButtons.addAll([
-          Expanded(child: _buildActionButton(title: tl('complete'), icon: Remix.checkbox_circle_line, onPressed: () => _handleStatusUpdate('complete'), isPrimary: true)),
+          Expanded(child: _buildActionButton(title: tl('complete'), icon: Remix.checkbox_circle_line, action: 'complete', isPrimary: true)),
           const SizedBox(width: 12),
-          Expanded(child: _buildActionButton(title: tl('hold'), icon: Remix.pause_circle_line, onPressed: () => _handleStatusUpdate('hold'), isPrimary: false)),
+          Expanded(child: _buildActionButton(title: tl('hold'), icon: Remix.pause_circle_line, action: 'hold', isPrimary: false)),
         ]);
         break;
       case 'H':
@@ -370,7 +367,7 @@ class _DetailMyBookScreenState extends State<DetailMyBookScreen> {
         iconColor = Colors.orange.shade600;
         title = tl('onHold');
         message = tl('statusCardOnHoldMessage');
-        actionButtons.add(Expanded(child: _buildActionButton(title: tl('publishNow'), icon: Remix.global_line, onPressed: () => _handleStatusUpdate('publish'), isPrimary: true)));
+        actionButtons.add(Expanded(child: _buildActionButton(title: tl('publishNow'), icon: Remix.global_line, action: 'publish', isPrimary: true)));
         break;
       case 'C':
         icon = Remix.checkbox_circle_line;
@@ -408,17 +405,19 @@ class _DetailMyBookScreenState extends State<DetailMyBookScreen> {
     );
   }
 
-  Widget _buildActionButton({required String title, required IconData icon, required VoidCallback onPressed, bool isPrimary = true}) {
+  Widget _buildActionButton({required String title, required IconData icon, required String action, bool isPrimary = true}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final bool isLoading = _loadingAction == action; // Cek apakah tombol ini yang sedang loading
+
     final style = isPrimary
         ? ElevatedButton.styleFrom(backgroundColor: colorScheme.primary, foregroundColor: colorScheme.onPrimary, disabledBackgroundColor: colorScheme.primary.withOpacity(0.5), disabledForegroundColor: colorScheme.onPrimary.withOpacity(0.7))
         : TextButton.styleFrom(backgroundColor: colorScheme.onSurface.withOpacity(0.1), foregroundColor: colorScheme.onSurface, disabledBackgroundColor: colorScheme.onSurface.withOpacity(0.05), disabledForegroundColor: colorScheme.onSurface.withOpacity(0.3));
 
     return ElevatedButton.icon(
-      onPressed: _isUpdatingStatus ? null : onPressed,
-      icon: _isUpdatingStatus ? Container() : Icon(icon, size: 18),
-      label: _isUpdatingStatus
+      onPressed: _loadingAction != null ? null : () => _handleStatusUpdate(action),
+      icon: isLoading ? Container() : Icon(icon, size: 18),
+      label: isLoading
           ? SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: isPrimary ? colorScheme.onPrimary : colorScheme.primary))
           : Text(title.toUpperCase()),
       style: style.copyWith(

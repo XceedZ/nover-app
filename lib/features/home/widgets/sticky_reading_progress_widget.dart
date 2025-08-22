@@ -1,16 +1,15 @@
 // lib/features/home/widgets/sticky_reading_progress_widget.dart
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import 'package:nover/features/home/screens/home_screen_content.dart'; // Untuk akses Book model & responsiveFontSize
-import 'package:nover/features/books/screens/book_detail_screen.dart'; // Untuk navigasi ke detail
+import 'package:nover/src/models/book.dart';
+import 'package:nover/src/utils/app_fonts.dart';
+import 'package:nover/src/utils/ui_helpers.dart';
+import 'package:nover/features/books/screens/book_detail_screen.dart';
 import 'package:remixicon/remixicon.dart';
-
-// Asumsi responsiveFontSize ada di scope global atau diimpor
-// Jika tidak, Anda perlu menyediakannya di sini atau mengimpornya.
+import 'package:cached_network_image/cached_network_image.dart'; // Import untuk CachedNetworkImageProvider
 
 class StickyReadingProgressWidget extends StatefulWidget {
   final Book book;
-  final double progress; // Nilai antara 0.0 dan 1.0
+  final double progress;
   final VoidCallback? onClose;
 
   const StickyReadingProgressWidget({
@@ -32,30 +31,29 @@ class _StickyReadingProgressWidgetState extends State<StickyReadingProgressWidge
   void initState() {
     super.initState();
     _progressController = AnimationController(
-      duration: const Duration(milliseconds: 800), // Durasi animasi progress bar
+      duration: const Duration(milliseconds: 800),
       vsync: this,
     );
-    _updateProgressAnimation(0.0, widget.progress); // Mulai dari 0 ke progress saat ini
-    _progressController.forward();
-  }
-
-  void _updateProgressAnimation(double oldProgress, double newProgress) {
-    _progressAnimation = Tween<double>(
-      begin: oldProgress, // Mulai dari progress sebelumnya (atau 0 untuk animasi awal)
-      end: newProgress,
-    ).animate(CurvedAnimation(
+    // Inisialisasi animasi dengan nilai awal 0.0 agar ada efek dari kiri ke kanan
+    _progressAnimation = Tween<double>(begin: 0.0, end: widget.progress).animate(CurvedAnimation(
       parent: _progressController,
       curve: Curves.easeInOut,
     ));
+    _progressController.forward();
   }
 
   @override
   void didUpdateWidget(covariant StickyReadingProgressWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.progress != oldWidget.progress) {
-      _updateProgressAnimation(_progressAnimation.value, widget.progress); // Animasikan dari nilai saat ini ke nilai baru
-      _progressController.reset();
-      _progressController.forward();
+      // Update animasi jika progres berubah
+      _progressAnimation = Tween<double>(begin: _progressAnimation.value, end: widget.progress).animate(CurvedAnimation(
+        parent: _progressController,
+        curve: Curves.easeInOut,
+      ));
+      _progressController
+        ..reset()
+        ..forward();
     }
   }
 
@@ -85,23 +83,30 @@ class _StickyReadingProgressWidgetState extends State<StickyReadingProgressWidge
     final double rfs = responsiveFontSize(context, 1);
     ThemeData theme = Theme.of(context);
     ColorScheme colorScheme = theme.colorScheme;
-    bool isNetworkImage = widget.book.imageUrl.startsWith('http');
+    bool isNetworkImage = widget.book.coverImageUrl.startsWith('http');
 
-    Color barBackgroundColor = colorScheme.background;
+    Color barBackgroundColor = colorScheme.surfaceContainer; // Warna yang lebih sesuai tema
     Color progressColor = theme.colorScheme.primary;
     Color progressBackgroundColor = theme.colorScheme.primary.withOpacity(0.2);
-    Color iconCloseColor = theme.textTheme.bodySmall?.color ?? Colors.grey.shade600;
-    Color titleColor = theme.textTheme.titleSmall?.color ?? Colors.black87;
-    Color subtitleColor = theme.textTheme.bodySmall?.color ?? Colors.grey.shade600;
+    Color iconCloseColor = theme.colorScheme.onSurfaceVariant;
+    Color titleColor = theme.colorScheme.onSurface;
+    Color subtitleColor = theme.colorScheme.onSurfaceVariant;
 
     return Material(
       elevation: 6.0,
       color: barBackgroundColor,
       child: InkWell(
         onTap: () {
+          // --- PERBAIKAN UTAMA ADA DI SINI ---
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => BookDetailScreen(book: widget.book)),
+            MaterialPageRoute(
+              builder: (context) => BookDetailScreen(
+                // Mengirim parameter sesuai konstruktor baru
+                bookId: widget.book.bookId,
+                initialBookData: widget.book,
+              ),
+            ),
           );
         },
         child: Container(
@@ -116,20 +121,18 @@ class _StickyReadingProgressWidgetState extends State<StickyReadingProgressWidge
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(rfs * 4),
-                    child: isNetworkImage
-                        ? Image.network(
-                      widget.book.imageUrl,
+                    // Menggunakan CachedNetworkImage untuk performa lebih baik
+                    child: CachedNetworkImage(
+                      imageUrl: widget.book.coverImageUrl,
                       width: rfs * 40,
                       height: rfs * 56,
                       fit: BoxFit.cover,
-                      errorBuilder: (ctx, err, st) => _buildImageError(ctx, rfs * 40, rfs * 56),
-                    )
-                        : Image.asset(
-                      widget.book.imageUrl,
-                      width: rfs * 40,
-                      height: rfs * 56,
-                      fit: BoxFit.cover,
-                      errorBuilder: (ctx, err, st) => _buildImageError(ctx, rfs * 40, rfs * 56),
+                      errorWidget: (ctx, err, st) => _buildImageError(ctx, rfs * 40, rfs * 56),
+                      placeholder: (ctx, url) => Container(
+                        width: rfs * 40,
+                        height: rfs * 56,
+                        color: theme.colorScheme.surfaceVariant,
+                      ),
                     ),
                   ),
                   SizedBox(width: rfs * 12),
@@ -140,22 +143,16 @@ class _StickyReadingProgressWidgetState extends State<StickyReadingProgressWidge
                       children: [
                         Text(
                           widget.book.title,
-                          style: GoogleFonts.montserrat(
-                            fontSize: rfs * 13.5,
-                            fontWeight: FontWeight.w600,
-                            color: titleColor,
-                          ),
+                          style: AppFonts.titleSmall(color: titleColor)?.copyWith(fontWeight: FontWeight.w600),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         SizedBox(height: rfs * 2),
                         Text(
-                          widget.book.chapter.isNotEmpty ? widget.book.chapter : widget.book.author,
-                          style: GoogleFonts.montserrat(
-                            fontSize: rfs * 11,
-                            fontWeight: FontWeight.w400,
-                            color: subtitleColor,
-                          ),
+                          // Menggunakan properti status yang ada di model Book
+                          // atau fallback ke penulis jika status tidak relevan di sini
+                          "Continue reading...", // Teks yang lebih relevan
+                          style: AppFonts.bodySmall(color: subtitleColor),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -164,7 +161,7 @@ class _StickyReadingProgressWidgetState extends State<StickyReadingProgressWidge
                   ),
                   SizedBox(width: rfs * 12),
                   IconButton(
-                    icon: Icon(RemixIcons.close_line, size: rfs * 28, color: iconCloseColor),
+                    icon: Icon(Remix.close_line, size: rfs * 28, color: iconCloseColor),
                     padding: EdgeInsets.zero,
                     visualDensity: VisualDensity.compact,
                     onPressed: widget.onClose,
@@ -177,7 +174,7 @@ class _StickyReadingProgressWidgetState extends State<StickyReadingProgressWidge
                   animation: _progressAnimation,
                   builder: (context, child) {
                     return LinearProgressIndicator(
-                      value: _progressAnimation.value, // Gunakan nilai animasi
+                      value: _progressAnimation.value,
                       backgroundColor: progressBackgroundColor,
                       valueColor: AlwaysStoppedAnimation<Color>(progressColor),
                       minHeight: rfs * 3.5,

@@ -214,7 +214,8 @@
     "edit": "Edit",
     "remove": "Remove",
     "searchChapter": "Search Chapter",
-    "allChapters": "All Chapter"
+    "allChapters": "All Chapter",
+    "chapter": "Chapter"
   },
   "error": {
     "invalid_credentials": "Login failed. Please check your username and password.",

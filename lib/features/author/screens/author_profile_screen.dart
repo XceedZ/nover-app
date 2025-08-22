@@ -3,18 +3,79 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:nover/features/home/screens/home_screen_content.dart' show Book;
+// --- PERBAIKAN 1: Ganti path import Book ke file model yang benar ---
+import 'package:nover/src/models/book.dart';
 import 'package:nover/src/utils/ui_helpers.dart';
 import 'package:nover/features/books/widgets/custom_detail_top_bar.dart';
 import 'package:remixicon/remixicon.dart';
 
-// Dummy data buku (sama seperti sebelumnya)
+// --- PERBAIKAN 2: Sesuaikan data dummy dengan konstruktor Book yang benar ---
 final List<Book> dummyAuthorBooks = [
-  Book(id: 301, title: "Center Terhebat NBA", author: "Pulpen CEO", imageUrl: "https://i.postimg.cc/G287x9P9/nba-center.jpg", chapter: "Bersambung | Bab 18", genres: ["Aksi", "Olahraga"], description: "Setelah transmigrasi, Orlando menjadi center cadangan tim SUN tahun 2010. Aw...", rating: 4.9, pages: 200, language: "ID"),
-  Book(id: 302, title: "Karya Lain Penulis Hebat", author: "Pulpen CEO", imageUrl: "https://i.postimg.cc/d1M6vXzP/fantasy-book.jpg", chapter: "Tamat", genres: ["Fantasi"], description: "Deskripsi singkat untuk karya lain dari penulis ini.", rating: 4.5, pages: 150, language: "ID"),
-  Book(id: 303, title: "Petualangan Pulpen Ajaib", author: "Pulpen CEO", imageUrl: "https://i.postimg.cc/s2hWzYx8/adventure-pen.jpg", chapter: "Ongoing | Bab 50", genres: ["Adventure", "Comedy"], description: "Sebuah kisah epik tentang petualangan sebuah pulpen yang bisa berbicara.", rating: 4.7, pages: 300, language: "ID"),
-  Book(id: 304, title: "Misteri Kedai Kopi Senja", author: "Author Lain", imageUrl: "https://i.postimg.cc/Bv0SM8rV/coffee-mystery.jpg", chapter: "10 Chapter", genres: ["Mystery", "Slice of Life"], description: "Rahasia kelam di balik secangkir kopi di sebuah kedai tua.", rating: 4.6, pages: 180, language: "ID"),
-  Book(id: 305, title: "Robot & Bunga Matahari", author: "Pulpen CEO", imageUrl: "https://i.postimg.cc/Y08KXQ0T/robot-sunflower.jpg", chapter: "Complete", genres: ["Sci-Fi", "Drama"], description: "Kisah persahabatan tak terduga antara robot dan bunga.", rating: 4.8, pages: 220, language: "ID"),
+  Book(
+      bookId: 301,
+      title: "Center Terhebat NBA",
+      author: "Pulpen CEO",
+      coverImageUrl: "https://i.postimg.cc/G287x9P9/nba-center.jpg",
+      genres: "Aksi, Olahraga",
+      description: "Setelah transmigrasi, Orlando menjadi center cadangan tim SUN tahun 2010. Aw...",
+      ratingAverage: 4.9,
+      status: 'P',
+      totalViews: 125000,
+      createDatetime: DateTime.now().toIso8601String(),
+      updateDatetime: DateTime.now().toIso8601String()
+  ),
+  Book(
+      bookId: 302,
+      title: "Karya Lain Penulis Hebat",
+      author: "Pulpen CEO",
+      coverImageUrl: "https://i.postimg.cc/d1M6vXzP/fantasy-book.jpg",
+      genres: "Fantasi",
+      description: "Deskripsi singkat untuk karya lain dari penulis ini.",
+      ratingAverage: 4.5,
+      status: 'C', // 'C' untuk Completed/Tamat
+      totalViews: 88000,
+      createDatetime: DateTime.now().toIso8601String(),
+      updateDatetime: DateTime.now().toIso8601String()
+  ),
+  Book(
+      bookId: 303,
+      title: "Petualangan Pulpen Ajaib",
+      author: "Pulpen CEO",
+      coverImageUrl: "https://i.postimg.cc/s2hWzYx8/adventure-pen.jpg",
+      genres: "Adventure, Comedy",
+      description: "Sebuah kisah epik tentang petualangan sebuah pulpen yang bisa berbicara.",
+      ratingAverage: 4.7,
+      status: 'P',
+      totalViews: 210000,
+      createDatetime: DateTime.now().toIso8601String(),
+      updateDatetime: DateTime.now().toIso8601String()
+  ),
+  Book(
+      bookId: 304,
+      title: "Misteri Kedai Kopi Senja",
+      author: "Author Lain",
+      coverImageUrl: "https://i.postimg.cc/Bv0SM8rV/coffee-mystery.jpg",
+      genres: "Mystery, Slice of Life",
+      description: "Rahasia kelam di balik secangkir kopi di sebuah kedai tua.",
+      ratingAverage: 4.6,
+      status: 'P',
+      totalViews: 95000,
+      createDatetime: DateTime.now().toIso8601String(),
+      updateDatetime: DateTime.now().toIso8601String()
+  ),
+  Book(
+      bookId: 305,
+      title: "Robot & Bunga Matahari",
+      author: "Pulpen CEO",
+      coverImageUrl: "https://i.postimg.cc/Y08KXQ0T/robot-sunflower.jpg",
+      genres: "Sci-Fi, Drama",
+      description: "Kisah persahabatan tak terduga antara robot dan bunga.",
+      ratingAverage: 4.8,
+      status: 'C',
+      totalViews: 150000,
+      createDatetime: DateTime.now().toIso8601String(),
+      updateDatetime: DateTime.now().toIso8601String()
+  ),
 ];
 
 class AuthorProfileScreen extends StatefulWidget {
@@ -99,7 +160,7 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
     return SizedBox(
       height: responsiveFontSize(context, 28),
       child: VerticalDivider(
-        color: Theme.of(context).colorScheme.secondary.withOpacity(0.6),
+        color: Theme.of(context).dividerColor.withOpacity(0.6), // Disesuaikan dengan tema
         thickness: 1,
         width: responsiveFontSize(context, 20),
       ),
@@ -150,20 +211,17 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
 
     final double statusBarPadding = MediaQuery.of(context).padding.top;
     final double appBarContentHeight = kToolbarHeight;
-    // Tinggi total yang akan digunakan oleh CustomDetailTopBar, termasuk area status bar
     final double topBarTotalHeight = appBarContentHeight + statusBarPadding;
 
-    List<Book> displayedBooks;
-    final List<Book> booksByThisAuthor = dummyAuthorBooks.where((book) => book.author.trim().toLowerCase() == widget.authorName.trim().toLowerCase()).toList();
+    // --- PERBAIKAN 3: Perbandingan author name dengan null safety ---
+    final List<Book> booksByThisAuthor = dummyAuthorBooks.where((book) {
+      if (book.author == null) return false;
+      return book.author!.trim().toLowerCase() == widget.authorName.trim().toLowerCase();
+    }).toList();
 
-    if (booksByThisAuthor.isNotEmpty) {
-      displayedBooks = booksByThisAuthor;
-    } else {
-      displayedBooks = dummyAuthorBooks.where((book) => book.author == "Pulpen CEO").toList();
-      if (displayedBooks.isEmpty && dummyAuthorBooks.isNotEmpty) {
-        displayedBooks = dummyAuthorBooks.take(3).toList();
-      }
-    }
+    final List<Book> displayedBooks = booksByThisAuthor.isNotEmpty
+        ? booksByThisAuthor
+        : dummyAuthorBooks.where((book) => book.author == "Pulpen CEO").toList();
 
     return Scaffold(
       backgroundColor: theme.colorScheme.background,
@@ -173,7 +231,6 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
             child: SingleChildScrollView(
               controller: _scrollController,
               padding: EdgeInsets.only(
-                // Konten utama dimulai di bawah keseluruhan top bar (termasuk status bar area)
                   top: topBarTotalHeight + responsiveFontSize(context, 10),
                   bottom: responsiveFontSize(context, 20)
               ),
@@ -302,18 +359,14 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
             left: 0,
             right: 0,
             child: CustomDetailTopBar(
-              backgroundColor: _topBarBackgroundColor, // Selalu hitam
-              iconColor: _topBarIconColor,         // Selalu putih atau kontras
+              backgroundColor: _topBarBackgroundColor,
+              iconColor: _topBarIconColor,
               onBackPressed: () => Navigator.of(context).pop(),
               onSharePressed: () {
                 print("Share button tapped for author: ${widget.authorName}");
               },
               topPadding: statusBarPadding,
-              // --- PERUBAHAN UKURAN TOP BAR ---
-              // CustomDetailTopBar menerima tinggi total termasuk area status bar.
-              // Widget ini kemudian akan menggunakan topPadding untuk menempatkan kontennya dengan benar.
               height: topBarTotalHeight,
-              // --- AKHIR PERUBAHAN UKURAN ---
               bookTitle: widget.authorName,
               bookAuthor: _showAuthorNameInAppBar ? "Author" : "",
               showTitleAuthor: _showAuthorNameInAppBar,
@@ -325,7 +378,6 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
   }
 }
 
-// Widget _AuthorBookCard tetap sama seperti versi sebelumnya
 class _AuthorBookCard extends StatelessWidget {
   final Book book;
   const _AuthorBookCard({required this.book});
@@ -356,7 +408,7 @@ class _AuthorBookCard extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(responsiveFontSize(context, 4)),
             child: CachedNetworkImage(
-              imageUrl: book.imageUrl,
+              imageUrl: book.coverImageUrl,
               height: responsiveFontSize(context, 100),
               width: responsiveFontSize(context, 70),
               fit: BoxFit.cover,
@@ -389,14 +441,13 @@ class _AuthorBookCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 SizedBox(height: responsiveFontSize(context, 4)),
-                if (book.chapter != null && book.chapter!.isNotEmpty)
-                  Text(
-                    book.chapter!,
-                    style: GoogleFonts.montserrat(
-                      fontSize: responsiveFontSize(context, 12),
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
-                    ),
+                Text(
+                  '${book.totalViews} Views', // Contoh menampilkan total views
+                  style: GoogleFonts.montserrat(
+                    fontSize: responsiveFontSize(context, 12),
+                    color: theme.colorScheme.onSurface.withOpacity(0.7),
                   ),
+                ),
                 SizedBox(height: responsiveFontSize(context, 6)),
                 if (book.genres != null && book.genres!.isNotEmpty)
                   Container(
@@ -409,7 +460,7 @@ class _AuthorBookCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(responsiveFontSize(context, 5)),
                     ),
                     child: Text(
-                      book.genres!.first,
+                      book.genres!.split(',').first, // Ambil genre pertama saja
                       style: GoogleFonts.montserrat(
                         fontSize: responsiveFontSize(context, 9.5),
                         color: customChipTextColor,
