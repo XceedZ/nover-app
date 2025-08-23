@@ -1,29 +1,16 @@
-// lib/features/profile/screens/coin_details_screen.dart
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:nover/src/utils/app_fonts.dart'; // Sesuaikan path jika perlu
-import 'package:nover/src/utils/ui_helpers.dart'; // Sesuaikan path jika perlu
+import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:nover/main.dart';
+import 'package:nover/src/models/coin_transaction.dart';
+import 'package:nover/src/models/wallet.dart';
+import 'package:nover/src/repositories/transaction_repository.dart';
+import 'package:nover/src/utils/app_fonts.dart';
+import 'package:nover/src/utils/date_convert.dart';
+import 'package:nover/src/utils/ui_helpers.dart';
 import 'package:remixicon/remixicon.dart';
-import 'package:flutter_translate/flutter_translate.dart'; // Pastikan ini di-uncomment dan library sudah tersetup
-
-// Fungsi _translatePlaceholder dan map translations dihilangkan
-
-// Model data dummy (sama seperti sebelumnya)
-class CoinHistoryItem {
-  final String title;
-  final String date;
-  final String amount;
-  final String validity;
-  final IconData icon;
-
-  CoinHistoryItem({
-    required this.title,
-    required this.date,
-    required this.amount,
-    this.validity = "",
-    this.icon = Remix.checkbox_blank_circle_line,
-  });
-}
+import 'package:flutter_translate/flutter_translate.dart';
+import 'package:shimmer/shimmer.dart';
 
 class CoinDetailsScreen extends StatefulWidget {
   const CoinDetailsScreen({super.key});
@@ -32,26 +19,28 @@ class CoinDetailsScreen extends StatefulWidget {
   State<CoinDetailsScreen> createState() => _CoinDetailsScreenState();
 }
 
-class _CoinDetailsScreenState extends State<CoinDetailsScreen> with TickerProviderStateMixin {
+class _CoinDetailsScreenState extends State<CoinDetailsScreen>
+    with TickerProviderStateMixin {
   TabController? _tabController;
+  final TransactionRepository _transactionRepository = TransactionRepository();
 
-  // Menggunakan fungsi translate() dari library i18n
-  late final List<CoinHistoryItem> _earnHistory = [
-    CoinHistoryItem(title: translate("label.checkInBonus"), date: "25/05/24 02:10", amount: "+3", validity: "1/06/24", icon: Remix.calendar_check_line),
-    CoinHistoryItem(title: translate("label.checkInBonus"), date: "24/05/24 02:42", amount: "+4", validity: "31/05/24", icon: Remix.calendar_check_line),
-    CoinHistoryItem(title: translate("label.registrationBonus"), date: "23/05/24 01:00", amount: "+30", validity: "23/06/24", icon: Remix.user_add_line),
-  ];
-
-  late final List<CoinHistoryItem> _useHistory = [
-    CoinHistoryItem(title: translate("label.unlockChapter", args: {'chapterNumber': 5}), date: "26/05/24 10:30", amount: "-10", icon: Remix.book_open_line),
-    CoinHistoryItem(title: translate("label.buyTheme", args: {'themeName': "Gelap Eksklusif"}), date: "25/05/24 15:00", amount: "-50", icon: Remix.palette_line),
-    CoinHistoryItem(title: translate("label.unlockChapter", args: {'chapterNumber': 4}), date: "24/05/24 08:15", amount: "-10", icon: Remix.book_open_line),
-  ];
+  late Future<List<CoinTransaction>> _earnHistoryFuture;
+  late Future<List<CoinTransaction>> _useHistoryFuture;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _loadHistories();
+  }
+
+  void _loadHistories() {
+    setState(() {
+      _earnHistoryFuture =
+          _transactionRepository.getTransactions(TransactionType.earn);
+      _useHistoryFuture =
+          _transactionRepository.getTransactions(TransactionType.spend);
+    });
   }
 
   @override
@@ -66,11 +55,9 @@ class _CoinDetailsScreenState extends State<CoinDetailsScreen> with TickerProvid
 
   Widget _buildBalanceSummaryCard(BuildContext context) {
     ThemeData theme = Theme.of(context);
-
     Color cardActualBgColor = theme.brightness == Brightness.light
         ? Colors.grey.shade50
         : theme.colorScheme.surfaceVariant.withOpacity(0.5);
-
     List<BoxShadow> cardShadow = [
       BoxShadow(
         color: theme.shadowColor.withOpacity(0.08),
@@ -79,103 +66,162 @@ class _CoinDetailsScreenState extends State<CoinDetailsScreen> with TickerProvid
         offset: const Offset(0, 4),
       ),
     ];
+    Color mainTextColorOnCard =
+    ThemeData.estimateBrightnessForColor(cardActualBgColor) ==
+        Brightness.light
+        ? Colors.black87
+        : Colors.white;
+    Color subtleTextColorOnCard =
+    ThemeData.estimateBrightnessForColor(cardActualBgColor) ==
+        Brightness.light
+        ? Colors.black54
+        : Colors.white70;
 
-    Brightness cardContentBrightness = ThemeData.estimateBrightnessForColor(cardActualBgColor);
-
-    Color mainTextColorOnCard = cardContentBrightness == Brightness.light ? Colors.black87 : Colors.white;
-    Color subtleTextColorOnCard = cardContentBrightness == Brightness.light ? Colors.black54 : Colors.white70;
-
-    final Color topUpButtonBgColor = Theme.of(context).colorScheme.primary;
-    final Color topUpButtonTextColor = Theme.of(context).colorScheme.onPrimary;
-
-    Color regularCoinIconColor = Colors.orange.shade600;
-    Color bonusCoinIconColor = Colors.blue.shade500;
-    if (cardContentBrightness == Brightness.dark) {
-      regularCoinIconColor = Colors.orange.shade400;
-      bonusCoinIconColor = Colors.blue.shade300;
-    }
-
-    return Container(
-      margin: EdgeInsets.all(_responsiveFontSize(context, 16)),
-      padding: EdgeInsets.all(_responsiveFontSize(context, 20)),
-      decoration: BoxDecoration(
-        color: cardActualBgColor,
-        borderRadius: BorderRadius.circular(_responsiveFontSize(context, 12)),
-        boxShadow: cardShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            translate('label.remainingBalance'), // Menggunakan translate()
-            style: GoogleFonts.montserrat(
-              fontSize: _responsiveFontSize(context, 13),
-              color: subtleTextColorOnCard,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          SizedBox(height: _responsiveFontSize(context, 4)),
-          Text(
-            "37", // Saldo utama
-            style: GoogleFonts.montserrat(
-              fontSize: _responsiveFontSize(context, 40),
-              fontWeight: FontWeight.bold,
-              color: mainTextColorOnCard,
-            ),
-          ),
-          SizedBox(height: _responsiveFontSize(context, 16)),
-          Row(
-            children: [
-              Icon(Remix.copper_coin_line, color: regularCoinIconColor, size: _responsiveFontSize(context, 18)),
-              SizedBox(width: _responsiveFontSize(context, 6)),
-              Text(
-                "${translate('label.coins')} 0", // Menggunakan translate()
-                style: GoogleFonts.montserrat(fontSize: _responsiveFontSize(context, 13), color: subtleTextColorOnCard),
+    return ValueListenableBuilder<Wallet?>(
+      valueListenable: walletNotifier,
+      builder: (context, wallet, child) {
+        if (wallet == null) {
+          return Container(
+            margin: EdgeInsets.all(_responsiveFontSize(context, 16)),
+            height: 250,
+            child: Shimmer.fromColors(
+              baseColor: themeProvider.value == ThemeMode.dark
+                  ? Colors.grey[800]!
+                  : Colors.grey[300]!,
+              highlightColor: themeProvider.value == ThemeMode.dark
+                  ? Colors.grey[700]!
+                  : Colors.grey[100]!,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius:
+                  BorderRadius.circular(_responsiveFontSize(context, 12)),
+                ),
               ),
-              const Spacer(),
-              Icon(Remix.gift_line, color: bonusCoinIconColor, size: _responsiveFontSize(context, 18)),
-              SizedBox(width: _responsiveFontSize(context, 6)),
+            ),
+          );
+        }
+
+        return Container(
+          margin: EdgeInsets.all(_responsiveFontSize(context, 16)),
+          padding: EdgeInsets.all(_responsiveFontSize(context, 20)),
+          decoration: BoxDecoration(
+            color: cardActualBgColor,
+            borderRadius:
+            BorderRadius.circular(_responsiveFontSize(context, 12)),
+            boxShadow: cardShadow,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Text(
-                "${translate('label.bonusCoins')} 37", // Menggunakan translate()
-                style: GoogleFonts.montserrat(fontSize: _responsiveFontSize(context, 13), color: subtleTextColorOnCard, fontWeight: FontWeight.w600),
+                translate('label.remainingBalance'),
+                style: GoogleFonts.montserrat(
+                  fontSize: _responsiveFontSize(context, 13),
+                  color: subtleTextColorOnCard,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: _responsiveFontSize(context, 4)),
+              Text(
+                wallet.totalCoins.toString(),
+                style: GoogleFonts.montserrat(
+                  fontSize: _responsiveFontSize(context, 40),
+                  fontWeight: FontWeight.bold,
+                  color: mainTextColorOnCard,
+                ),
+              ),
+              SizedBox(height: _responsiveFontSize(context, 16)),
+              Row(
+                children: [
+                  Icon(Remix.copper_coin_line,
+                      color: Colors.orange.shade600,
+                      size: _responsiveFontSize(context, 18)),
+                  SizedBox(width: _responsiveFontSize(context, 6)),
+                  Text(
+                    "${translate('label.coins')} ${wallet.paidCoins}",
+                    style: GoogleFonts.montserrat(
+                        fontSize: _responsiveFontSize(context, 13),
+                        color: subtleTextColorOnCard),
+                  ),
+                  const Spacer(),
+                  Icon(Remix.gift_line,
+                      color: Colors.blue.shade500,
+                      size: _responsiveFontSize(context, 18)),
+                  SizedBox(width: _responsiveFontSize(context, 6)),
+                  Text(
+                    "${translate('label.bonusCoins')} ${wallet.bonusCoins}",
+                    style: GoogleFonts.montserrat(
+                        fontSize: _responsiveFontSize(context, 13),
+                        color: subtleTextColorOnCard,
+                        fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              SizedBox(height: _responsiveFontSize(context, 4)),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  translate('label.expirationWarning'),
+                  style: GoogleFonts.montserrat(
+                      fontSize: _responsiveFontSize(context, 10),
+                      color: subtleTextColorOnCard.withOpacity(0.8)),
+                ),
+              ),
+              SizedBox(height: _responsiveFontSize(context, 20)),
+              ElevatedButton(
+                onPressed: () {/* TODO: Aksi Top Up */},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
+                  minimumSize:
+                  Size(double.infinity, _responsiveFontSize(context, 48)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                    BorderRadius.circular(_responsiveFontSize(context, 8)),
+                  ),
+                ),
+                child: Text(translate('label.topUp'),
+                    style: GoogleFonts.montserrat(
+                        fontSize: _responsiveFontSize(context, 16),
+                        fontWeight: FontWeight.w600)),
               ),
             ],
           ),
-          SizedBox(height: _responsiveFontSize(context, 4)),
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text(
-              translate('label.expirationWarning'), // Menggunakan translate()
-              style: GoogleFonts.montserrat(fontSize: _responsiveFontSize(context, 10), color: subtleTextColorOnCard.withOpacity(0.8)),
-            ),
-          ),
-          SizedBox(height: _responsiveFontSize(context, 20)),
-          ElevatedButton(
-            onPressed: () { /* TODO: Aksi Top Up */ },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: topUpButtonBgColor,
-              foregroundColor: topUpButtonTextColor,
-              minimumSize: Size(double.infinity, _responsiveFontSize(context, 48)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(_responsiveFontSize(context, 8)),
-              ),
-              textStyle: GoogleFonts.montserrat(
-                fontSize: _responsiveFontSize(context, 16),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            child: Text(translate('label.topUp')), // Menggunakan translate()
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildHistoryListItem(BuildContext context, CoinHistoryItem item) {
+  Widget _buildHistoryListItem(BuildContext context, CoinTransaction item) {
     ThemeData theme = Theme.of(context);
-    bool isDebit = item.amount.startsWith('-');
+    bool isDebit = item.amount < 0;
+    final locale = Localizations.localeOf(context).toString();
+
+    IconData icon;
+    switch (item.transactionType) {
+      case 'CHECK_IN':
+        icon = Remix.calendar_check_line;
+        break;
+      case 'REGISTRATION':
+        icon = Remix.user_add_line;
+        break;
+      case 'UNLOCK_CHAPTER':
+        icon = Remix.book_open_line;
+        break;
+      case 'MISSION_REWARD':
+        icon = Remix.award_line;
+        break;
+      case 'PURCHASE':
+        icon = Remix.shopping_cart_2_line;
+        break;
+      default:
+        icon = Remix.checkbox_blank_circle_line;
+    }
+
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: _responsiveFontSize(context, 12)),
+      padding:
+      EdgeInsets.symmetric(vertical: _responsiveFontSize(context, 12)),
       child: Row(
         children: [
           CircleAvatar(
@@ -183,11 +229,10 @@ class _CoinDetailsScreenState extends State<CoinDetailsScreen> with TickerProvid
             backgroundColor: isDebit
                 ? Colors.red.withOpacity(0.1)
                 : theme.colorScheme.primary.withOpacity(0.1),
-            child: Icon(
-                item.icon,
+            child: Icon(icon,
                 size: _responsiveFontSize(context, 18),
-                color: isDebit ? Colors.red.shade700 : theme.colorScheme.primary
-            ),
+                color:
+                isDebit ? Colors.red.shade700 : theme.colorScheme.primary),
           ),
           SizedBox(width: _responsiveFontSize(context, 12)),
           Expanded(
@@ -195,7 +240,8 @@ class _CoinDetailsScreenState extends State<CoinDetailsScreen> with TickerProvid
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.title, // title sudah hasil translate() dari _earnHistory/_useHistory
+                  item.description ??
+                      translate('label.${item.transactionType.toLowerCase()}'),
                   style: GoogleFonts.montserrat(
                     fontSize: _responsiveFontSize(context, 14),
                     fontWeight: FontWeight.w600,
@@ -204,7 +250,8 @@ class _CoinDetailsScreenState extends State<CoinDetailsScreen> with TickerProvid
                 ),
                 SizedBox(height: _responsiveFontSize(context, 2)),
                 Text(
-                  item.date,
+                  DateFormatter.formatFullDateTime(item.createDatetime,
+                      locale: locale),
                   style: GoogleFonts.montserrat(
                     fontSize: _responsiveFontSize(context, 11),
                     color: theme.colorScheme.onBackground.withOpacity(0.6),
@@ -217,17 +264,19 @@ class _CoinDetailsScreenState extends State<CoinDetailsScreen> with TickerProvid
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                item.amount,
+                (isDebit ? "" : "+") + item.amount.toString(),
                 style: GoogleFonts.montserrat(
                   fontSize: _responsiveFontSize(context, 14),
                   fontWeight: FontWeight.bold,
-                  color: isDebit ? Colors.red.shade700 : theme.colorScheme.primary,
+                  color: isDebit
+                      ? Colors.red.shade700
+                      : theme.colorScheme.primary,
                 ),
               ),
-              if (item.validity.isNotEmpty) ...[
+              if (item.expiryDate != null && item.expiryDate!.isNotEmpty) ...[
                 SizedBox(height: _responsiveFontSize(context, 2)),
                 Text(
-                  "${translate('label.validUntil')} ${item.validity}", // Menggunakan translate()
+                  "${translate('label.validUntil')} ${DateFormatter.formatApiDate(item.expiryDate, locale: locale)}",
                   style: GoogleFonts.montserrat(
                     fontSize: _responsiveFontSize(context, 10),
                     color: theme.colorScheme.onBackground.withOpacity(0.5),
@@ -241,48 +290,77 @@ class _CoinDetailsScreenState extends State<CoinDetailsScreen> with TickerProvid
     );
   }
 
-  Widget _buildEarnTab(BuildContext context) {
-    return ListView.separated(
-      padding: EdgeInsets.symmetric(horizontal: _responsiveFontSize(context, 16), vertical: _responsiveFontSize(context, 8)),
-      itemCount: _earnHistory.length,
-      itemBuilder: (context, index) {
-        return _buildHistoryListItem(context, _earnHistory[index]);
-      },
-      separatorBuilder: (context, index) => Divider(
-        color: Theme.of(context).dividerColor.withOpacity(0.3),
-        height: 0.5,
-        thickness: 0.5,
+  Widget _buildEmptyHistoryPlaceholder(
+      {required IconData icon, required String message}) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: EdgeInsets.all(responsiveFontSize(context, 16)),
+            decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceVariant.withOpacity(0.5),
+                shape: BoxShape.circle),
+            child: Icon(icon,
+                color: theme.colorScheme.onSurface.withOpacity(0.4),
+                size: responsiveFontSize(context, 32)),
+          ),
+          SizedBox(height: responsiveFontSize(context, 16)),
+          Text(
+            message,
+            textAlign: TextAlign.center,
+            style: AppFonts.bodyMedium(
+                color: theme.colorScheme.onSurface.withOpacity(0.6)),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildUseTab(BuildContext context) {
-    if (_useHistory.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: EdgeInsets.all(_responsiveFontSize(context, 16)),
-          child: Text(
-            translate('label.noCoinUsageHistory'), // Menggunakan translate()
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: _responsiveFontSize(context, 16),
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+  Widget _buildHistoryTab(BuildContext context,
+      Future<List<CoinTransaction>> future, TransactionType type) {
+    return FutureBuilder<List<CoinTransaction>>(
+      future: future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // ✨ PERBAIKAN: Gunakan loading indicator yang konsisten
+          return Center(
+            child: LoadingAnimationWidget.staggeredDotsWave(
+              color: Theme.of(context).colorScheme.primary,
+              size: 50,
             ),
-          ),
-        ),
-      );
-    }
-    return ListView.separated(
-      padding: EdgeInsets.symmetric(horizontal: _responsiveFontSize(context, 16), vertical: _responsiveFontSize(context, 8)),
-      itemCount: _useHistory.length,
-      itemBuilder: (context, index) {
-        return _buildHistoryListItem(context, _useHistory[index]);
+          );
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text(translate('label.failedToLoadHistory')));
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return _buildEmptyHistoryPlaceholder(
+            icon: type == TransactionType.earn
+                ? Remix.hand_coin_line
+                : Remix.hourglass_2_line,
+            message: translate(type == TransactionType.earn
+                ? 'label.noCoinEarnHistory'
+                : 'label.noCoinUsageHistory'),
+          );
+        }
+
+        final history = snapshot.data!;
+        return ListView.separated(
+          padding: EdgeInsets.symmetric(
+              horizontal: _responsiveFontSize(context, 16),
+              vertical: _responsiveFontSize(context, 8)),
+          itemCount: history.length,
+          itemBuilder: (context, index) {
+            return _buildHistoryListItem(context, history[index]);
+          },
+          separatorBuilder: (context, index) => Divider(
+              color: Theme.of(context).dividerColor.withOpacity(0.3),
+              height: 0.5,
+              thickness: 0.5),
+        );
       },
-      separatorBuilder: (context, index) => Divider(
-        color: Theme.of(context).dividerColor.withOpacity(0.3),
-        height: 0.5,
-        thickness: 0.5,
-      ),
     );
   }
 
@@ -298,21 +376,22 @@ class _CoinDetailsScreenState extends State<CoinDetailsScreen> with TickerProvid
           icon: Icon(Remix.arrow_left_s_line, color: appBarContentColor),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(
-            translate('label.coinDetails'), // Menggunakan translate()
-            style: AppFonts.titleLarge(color: appBarContentColor).copyWith(fontSize: _responsiveFontSize(context, 18))
-        ),
-        backgroundColor: theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
+        title: Text(translate('label.coinDetails'),
+            style: AppFonts.titleLarge(color: appBarContentColor)
+                .copyWith(fontSize: _responsiveFontSize(context, 18))),
+        backgroundColor:
+        theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface,
         elevation: 0.5,
-        surfaceTintColor: theme.appBarTheme.surfaceTintColor ?? theme.colorScheme.surface,
+        surfaceTintColor:
+        theme.appBarTheme.surfaceTintColor ?? theme.colorScheme.surface,
         actions: [
           IconButton(
             icon: Icon(Remix.question_line, color: appBarContentColor),
-            onPressed: () { /* TODO: Aksi bantuan */ },
+            onPressed: () {/* TODO: Aksi bantuan */},
           ),
           IconButton(
             icon: Icon(Remix.whatsapp_line, color: appBarContentColor),
-            onPressed: () { /* TODO: Aksi WhatsApp */ },
+            onPressed: () {/* TODO: Aksi WhatsApp */},
           ),
         ],
         bottom: PreferredSize(
@@ -338,7 +417,8 @@ class _CoinDetailsScreenState extends State<CoinDetailsScreen> with TickerProvid
             child: TabBar(
               controller: _tabController,
               labelColor: theme.colorScheme.primary,
-              unselectedLabelColor: theme.colorScheme.onBackground.withOpacity(0.3),
+              unselectedLabelColor:
+              theme.colorScheme.onBackground.withOpacity(0.3),
               indicatorColor: theme.colorScheme.primary,
               indicatorWeight: 2.0,
               indicatorSize: TabBarIndicatorSize.label,
@@ -352,8 +432,8 @@ class _CoinDetailsScreenState extends State<CoinDetailsScreen> with TickerProvid
                 fontWeight: FontWeight.w600,
               ),
               tabs: [
-                Tab(text: translate('label.earn')), // Menggunakan translate()
-                Tab(text: translate('label.use')), // Menggunakan translate()
+                Tab(text: translate('label.earn')),
+                Tab(text: translate('label.use')),
               ],
             ),
           ),
@@ -361,8 +441,10 @@ class _CoinDetailsScreenState extends State<CoinDetailsScreen> with TickerProvid
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildEarnTab(context),
-                _buildUseTab(context),
+                _buildHistoryTab(
+                    context, _earnHistoryFuture, TransactionType.earn),
+                _buildHistoryTab(
+                    context, _useHistoryFuture, TransactionType.spend),
               ],
             ),
           ),

@@ -242,7 +242,11 @@
     "replyingTo": "Membalas {name}",
     "failedToLoadComments": "Gagal memuat komentar.",
     "retry": "Coba Lagi",
-    "beTheFirstToComment": "Jadilah yang pertama berkomentar!"
+    "beTheFirstToComment": "Jadilah yang pertama berkomentar!",
+    "checkInMotivation": "Check-in terus untuk mendapatkan koin bonus semakin banyak~",
+    "dailyCheckInAndRewards": "Check-in Harian & Hadiah",
+    "checkinSuccessMessage": "Berhasil check-in dan mendapatkan {reward} Koin Bonus!",
+    "noCoinEarnHistory": "Anda belum pernah mendapatkan koin."
   },
   "error": {
     "invalid_credentials": "Login gagal. Periksa kembali nama pengguna dan kata sandi Anda.",

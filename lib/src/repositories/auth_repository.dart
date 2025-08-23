@@ -1,7 +1,8 @@
-// lib/src/repositories/auth_repository.dart
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:nover/main.dart'; // ✨ Impor untuk akses notifiers global
 import 'package:nover/src/constants/api_constants.dart';
+import 'package:nover/src/repositories/wallet_repository.dart'; // ✨ Impor WalletRepository
 import 'package:nover/src/services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nover/src/utils/translation.dart';
@@ -11,9 +12,9 @@ import 'dart:developer' as developer;
 class AuthRepository {
   final ApiService _apiService;
 
-  AuthRepository({ApiService? apiService}) : _apiService = apiService ?? ApiService();
+  AuthRepository({ApiService? apiService})
+      : _apiService = apiService ?? ApiService();
 
-  // UBAH 1: Pastikan tipe return-nya adalah Future<Map<String, dynamic>>
   Future<Map<String, dynamic>> login({
     required String username,
     required String password,
@@ -27,10 +28,8 @@ class AuthRepository {
       );
 
       if (response.statusCode == 200 && response.data != null) {
-
-        // --- TAMBAHKAN BARIS INI UNTUK DEBUGGING ---
-        developer.log('API Login Response Body: ${response.data}', name: 'AuthRepository');
-        // -------------------------------------------
+        developer.log('API Login Response Body: ${response.data}',
+            name: 'AuthRepository');
 
         final token = response.data['token'];
         final userData = response.data['user'];
@@ -40,6 +39,9 @@ class AuthRepository {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString(tokenSessionKey, token);
           await prefs.setString(userSessionKey, jsonEncode(userData));
+
+          // ✨ PANGGIL FUNGSI UNTUK MENGAMBIL DATA WALLET SETELAH LOGIN SUKSES
+          await _fetchAndSetWallet();
 
           return userData as Map<String, dynamic>;
         } else {
@@ -61,6 +63,21 @@ class AuthRepository {
     }
   }
 
+  // ✨ FUNGSI HELPER BARU UNTUK MENGAMBIL DAN MENYIMPAN DATA WALLET
+  Future<void> _fetchAndSetWallet() async {
+    try {
+      final walletRepo = WalletRepository();
+      final walletData = await walletRepo.getMyWallet();
+      walletNotifier.value = walletData;
+      developer.log('Wallet data fetched successfully after login.',
+          name: 'AuthRepository');
+    } catch (e) {
+      developer.log("Failed to fetch wallet data after login: $e",
+          name: 'AuthRepository');
+      // Tidak melempar error agar login tetap dianggap berhasil
+    }
+  }
+
   Future<void> register({
     required String fullName,
     required String username,
@@ -75,18 +92,14 @@ class AuthRepository {
     };
 
     try {
-      // API registrasi biasanya mengembalikan status 201 Created atau 200 OK
-      // dan tidak selalu mengembalikan token. Kita anggap sukses jika tidak ada error.
       await _apiService.post(
         ApiConstants.registerEndpoint,
         data: registerData,
       );
     } on DioException catch (e) {
-      // Tangani error API seperti pada fungsi login
       if (e.response?.data != null && e.response!.data is Map) {
         final errorCode = e.response!.data['code'];
         if (errorCode != null && errorCode is String) {
-          // Contoh error code dari API: 'email_already_exists', 'username_taken'
           throw te(errorCode);
         }
       }
@@ -111,6 +124,10 @@ class AuthRepository {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(tokenSessionKey);
     await prefs.remove(userSessionKey);
+
+    // ✨ KOSONGKAN JUGA DATA WALLET SAAT LOGOUT
+    walletNotifier.value = null;
+
     _apiService.clearAuthToken();
   }
 }

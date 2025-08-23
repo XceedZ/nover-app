@@ -75,8 +75,8 @@
     "noReviewsYet": "No reviews yet",
     "day": "Day",
     "checkInNow": "CHECK-IN NOW",
-    "alreadyCheckInToday": "ALREADY CHECKED IN TODAY",
-    "dailyMission": "Daily Mission",
+    "alreadyCheckInToday": "CHECKED-IN TODAY",
+    "dailyMission": "Daily Missions",
     "read": "READ",
     "fill": "FILL",
     "login": "LOGIN",
@@ -239,7 +239,11 @@
     "replyingTo": "Replying to {name}",
     "failedToLoadComments": "Failed to load comments.",
     "retry": "Retry",
-    "beTheFirstToComment": "Be the first to comment!"
+    "beTheFirstToComment": "Be the first to comment!",
+    "checkInMotivation": "Keep checking in to get more bonus coins~",
+    "dailyCheckInAndRewards": "Daily Check-in & Rewards",
+    "checkinSuccessMessage": "Successfully checked in and received {reward} Bonus Coins!",
+    "noCoinEarnHistory": "You have not earned any coins yet."
   },
   "error": {
     "invalid_credentials": "Login failed. Please check your username and password.",

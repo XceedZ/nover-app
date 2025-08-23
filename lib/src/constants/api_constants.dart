@@ -27,5 +27,9 @@ class ApiConstants {
   static String getBookComments(int bookId) => '/v1/books/$bookId/comments';
   static String postBookComment(int bookId) => '/v1/books/$bookId/comments';
   static const String getNotificationsEndpoint = '/v1/notifications';
-
+  static const String getMyWalletEndpoint = '/v1/wallet/my-balance';
+  static const String getMyTransactionsEndpoint = '/v1/wallet/transactions';
+  static const String getCheckinStatusEndpoint = '/v1/events/check-in/status';
+  static const String performCheckinEndpoint = '/v1/events/check-in';
+  static const String getDailyMissionsEndpoint = '/v1/events/missions/daily';
 }

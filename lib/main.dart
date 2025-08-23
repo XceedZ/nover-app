@@ -1,11 +1,12 @@
-// lib/main.dart
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_translate/flutter_translate.dart';
 import 'package:nover/features/home/screens/home_page.dart';
-import 'package:nover/src/constants/app_constants.dart'; // <-- IMPORT BARU
+import 'package:nover/src/constants/app_constants.dart';
+import 'package:nover/src/models/wallet.dart'; // ✨ 1. IMPORT BARU
 import 'package:nover/src/repositories/auth_repository.dart';
+import 'package:nover/src/repositories/wallet_repository.dart'; // ✨ 1. IMPORT BARU
 import 'package:nover/src/services/navigation_service.dart';
 import 'package:nover/src/theme/theme_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,6 +16,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 late ThemeProvider themeProvider;
 late ValueNotifier<bool> lowPerformanceModeProvider;
 late ValueNotifier<Map<String, dynamic>?> authNotifier;
+late ValueNotifier<Wallet?> walletNotifier; // ✨ 2. DEKLARASI NOTIFIER BARU
 
 void main() async {
   try {
@@ -31,10 +33,26 @@ void main() async {
     final initialUserData = await authRepository.getCurrentUser();
     authNotifier = ValueNotifier<Map<String, dynamic>?>(initialUserData);
 
+    // ✨ 3. LOGIKA UNTUK MEMUAT DATA WALLET SAAT STARTUP
+    walletNotifier = ValueNotifier<Wallet?>(null);
+    if (initialUserData != null) {
+      // Jika pengguna sudah login, langsung coba ambil data wallet-nya
+      try {
+        final walletRepository = WalletRepository();
+        final initialWalletData = await walletRepository.getMyWallet();
+        walletNotifier.value = initialWalletData;
+      } catch (e) {
+        developer.log(
+            "Gagal memuat data wallet awal: $e",
+            name: "main.dart"
+        );
+        // Biarkan app tetap berjalan meskipun wallet gagal dimuat
+      }
+    }
+
     const String fallbackLocale = 'en';
     const List<String> supportedLocales = ['en', 'id'];
 
-    // UBAH: Menggunakan konstanta dari AppConstants
     String savedLanguage = prefs.getString(AppConstants.languagePrefKey) ?? fallbackLocale;
 
     var delegate = await LocalizationDelegate.create(
@@ -44,7 +62,6 @@ void main() async {
     );
     await delegate.changeLocale(Locale(savedLanguage));
 
-    // UBAH: Menggunakan konstanta dari AppConstants
     String? savedThemeModeString = prefs.getString(AppConstants.themePrefKey);
     ThemeMode initialThemeMode;
     if (savedThemeModeString == ThemeMode.dark.toString()) {
@@ -54,7 +71,6 @@ void main() async {
     }
     themeProvider = ThemeProvider(initialThemeMode);
 
-    // UBAH: Menggunakan konstanta dari AppConstants
     bool initialLowPerformanceMode = prefs.getBool(AppConstants.lowPerformanceModePrefKey) ?? false;
     lowPerformanceModeProvider = ValueNotifier<bool>(initialLowPerformanceMode);
 

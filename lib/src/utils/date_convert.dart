@@ -16,6 +16,19 @@ class DateFormatter {
     }
   }
 
+  /// Format: "23 Agustus 2025, 09:30" (sudah mendukung i18n untuk nama bulan)
+  static String formatFullDateTime(String? isoString, {String? locale}) {
+    if (isoString == null || isoString.isEmpty) return '';
+    try {
+      final dateTime = DateTime.parse(isoString).toLocal(); // Konversi ke waktu lokal
+      // 'dd MMMM yyyy, HH:mm' akan menghasilkan "23 August 2025, 09:30"
+      // 'MMMM' secara otomatis akan diterjemahkan oleh `intl` jika locale didukung
+      return DateFormat('dd MMMM yyyy, HH:mm', locale).format(dateTime);
+    } catch (e) {
+      return '';
+    }
+  }
+
   static String formatApiDateToTimeAgo(String? isoString, {String? locale}) {
     if (isoString == null || isoString.isEmpty) return '';
     try {

@@ -1,8 +1,7 @@
-// lib/features/profile/screens/profile_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:nover/features/auth/screens/welcome_screen.dart';
+import 'package:nover/src/models/wallet.dart';
 import 'package:nover/src/repositories/auth_repository.dart';
 import 'package:nover/src/repositories/dicebear_repository.dart';
 import 'package:nover/src/utils/app_fonts.dart';
@@ -15,6 +14,7 @@ import 'coin_details_screen.dart';
 import 'package:nover/features/event_center/screens/event_center_screen.dart';
 import 'package:nover/features/author/screens/became_author_screen.dart';
 import 'package:nover/features/posts/screens/my_posts_screen.dart';
+import 'package:shimmer/shimmer.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -26,7 +26,8 @@ class ProfileScreen extends StatelessWidget {
 
     // Variabel warna dan gaya
     final onSurfaceColor = colorScheme.onSurface;
-    final subtleTextColor = theme.textTheme.bodySmall?.color ?? Colors.grey.shade600;
+    final subtleTextColor =
+        theme.textTheme.bodySmall?.color ?? Colors.grey.shade600;
     final balanceCardBackgroundColor = theme.brightness == Brightness.light
         ? Colors.grey.shade50
         : colorScheme.surfaceVariant.withOpacity(0.5);
@@ -63,29 +64,42 @@ class ProfileScreen extends StatelessWidget {
                 _buildProfileHeader(context, theme, isLoggedIn, currentUser),
                 Padding(
                   padding: EdgeInsets.only(
-                    top: isLoggedIn ? responsiveFontSize(context, 20) : responsiveFontSize(context, 24),
+                    top: isLoggedIn
+                        ? responsiveFontSize(context, 20)
+                        : responsiveFontSize(context, 24),
                     left: responsiveFontSize(context, 16.0),
                     right: responsiveFontSize(context, 16.0),
                   ),
                   child: isLoggedIn
-                      ? _buildBalanceCard(
-                      context,
-                      balanceCardBackgroundColor,
-                      onSurfaceColor,
-                      subtleTextColor,
-                      colorScheme.primary,
-                      colorScheme.onPrimary,
-                      warningTextColor,
-                      warningBackgroundColor,
-                      coinsIconColor,
-                      bonusCoinsIconColor,
-                      dividerColor,
-                      cardShadow)
+                      ? ValueListenableBuilder<Wallet?>(
+                    valueListenable: walletNotifier,
+                    builder: (context, wallet, child) {
+                      if (wallet == null) {
+                        return _buildBalanceCardLoading(context,
+                            balanceCardBackgroundColor, cardShadow);
+                      }
+                      return _buildBalanceCard(
+                          context,
+                          wallet,
+                          balanceCardBackgroundColor,
+                          onSurfaceColor,
+                          subtleTextColor,
+                          colorScheme.primary,
+                          colorScheme.onPrimary,
+                          warningTextColor,
+                          warningBackgroundColor,
+                          coinsIconColor,
+                          bonusCoinsIconColor,
+                          dividerColor,
+                          cardShadow);
+                    },
+                  )
                       : _buildLoginPromptCard(context, theme, cardShadow),
                 ),
                 SizedBox(height: responsiveFontSize(context, 24)),
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: responsiveFontSize(context, 16.0)),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: responsiveFontSize(context, 16.0)),
                   child: _buildMenuListContainer(
                       context,
                       onSurfaceColor,
@@ -107,7 +121,8 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildProfileHeader(BuildContext context, ThemeData theme, bool isLoggedIn, Map<String, dynamic>? userData) {
+  Widget _buildProfileHeader(BuildContext context, ThemeData theme,
+      bool isLoggedIn, Map<String, dynamic>? userData) {
     if (!isLoggedIn || userData == null) return const SizedBox.shrink();
 
     final dicebearRepo = DicebearRepository();
@@ -126,7 +141,11 @@ class ProfileScreen extends StatelessWidget {
     }
 
     return Padding(
-      padding: EdgeInsets.only(top: responsiveFontSize(context, 24), left: responsiveFontSize(context, 16), right: responsiveFontSize(context, 16), bottom: responsiveFontSize(context, 16)),
+      padding: EdgeInsets.only(
+          top: responsiveFontSize(context, 24),
+          left: responsiveFontSize(context, 16),
+          right: responsiveFontSize(context, 16),
+          bottom: responsiveFontSize(context, 16)),
       child: Row(
         children: [
           CircleAvatar(
@@ -138,12 +157,16 @@ class ProfileScreen extends StatelessWidget {
           Expanded(
             child: Text(
               fullName,
-              style: AppFonts.headerStyle.copyWith(fontSize: responsiveFontSize(context, 24), color: colorScheme.onSurface),
+              style: AppFonts.headerStyle.copyWith(
+                  fontSize: responsiveFontSize(context, 24),
+                  color: colorScheme.onSurface),
               overflow: TextOverflow.ellipsis,
             ),
           ),
           IconButton(
-            icon: Icon(Remix.edit_2_line, size: responsiveFontSize(context, 24), color: colorScheme.onSurface.withOpacity(0.7)),
+            icon: Icon(Remix.edit_2_line,
+                size: responsiveFontSize(context, 24),
+                color: colorScheme.onSurface.withOpacity(0.7)),
             onPressed: () => print('Edit Profile tapped'),
             tooltip: tl('editProfileTooltip'),
           )
@@ -152,22 +175,32 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLoginPromptCard(BuildContext context, ThemeData theme, List<BoxShadow> boxShadow) {
+  Widget _buildLoginPromptCard(
+      BuildContext context, ThemeData theme, List<BoxShadow> boxShadow) {
     return Container(
       padding: EdgeInsets.all(responsiveFontSize(context, 24)),
-      decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(responsiveFontSize(context, 20)), boxShadow: boxShadow),
+      decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(responsiveFontSize(context, 20)),
+          boxShadow: boxShadow),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: EdgeInsets.all(responsiveFontSize(context, 8)),
-            decoration: BoxDecoration(color: theme.colorScheme.primary.withOpacity(0.1), shape: BoxShape.circle),
-            child: Icon(Remix.login_circle_line, color: theme.colorScheme.primary, size: responsiveFontSize(context, 24)),
+            decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.1),
+                shape: BoxShape.circle),
+            child: Icon(Remix.login_circle_line,
+                color: theme.colorScheme.primary,
+                size: responsiveFontSize(context, 24)),
           ),
           SizedBox(height: responsiveFontSize(context, 24)),
           Text(
             tl('label.accStatus'),
-            style: AppFonts.labelSmall(color: theme.colorScheme.onSurface.withOpacity(0.6))?.copyWith(fontWeight: FontWeight.w600),
+            style: AppFonts.labelSmall(
+                color: theme.colorScheme.onSurface.withOpacity(0.6))
+                ?.copyWith(fontWeight: FontWeight.w600),
           ),
           SizedBox(height: responsiveFontSize(context, 4)),
           Text(
@@ -177,22 +210,29 @@ class ProfileScreen extends StatelessWidget {
           SizedBox(height: responsiveFontSize(context, 16)),
           Text(
             tl('label.loginDesc'),
-            style: AppFonts.bodyMedium(color: theme.colorScheme.onSurface.withOpacity(0.7))?.copyWith(height: 1.5),
+            style: AppFonts.bodyMedium(
+                color: theme.colorScheme.onSurface.withOpacity(0.7))
+                ?.copyWith(height: 1.5),
           ),
           SizedBox(height: responsiveFontSize(context, 24)),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const WelcomeScreen())),
+              onPressed: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => const WelcomeScreen())),
               style: ElevatedButton.styleFrom(
                 backgroundColor: theme.colorScheme.primary,
                 foregroundColor: theme.colorScheme.onPrimary,
-                padding: EdgeInsets.symmetric(vertical: responsiveFontSize(context, 14)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(responsiveFontSize(context, 12))),
+                padding: EdgeInsets.symmetric(
+                    vertical: responsiveFontSize(context, 14)),
+                shape: RoundedRectangleBorder(
+                    borderRadius:
+                    BorderRadius.circular(responsiveFontSize(context, 12))),
               ),
               child: Text(
                 tl('label.login'),
-                style: AppFonts.titleSmall(color: theme.colorScheme.onPrimary)?.copyWith(fontWeight: FontWeight.bold),
+                style: AppFonts.titleSmall(color: theme.colorScheme.onPrimary)
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -201,10 +241,26 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBalanceCard(BuildContext context, Color cardBgColor, Color onCardColor, Color subtleOnCardColor, Color buttonBgColor, Color buttonTextColor, Color warningTextColor, Color warningBackgroundColor, Color coinsIconColor, Color bonusCoinsIconColor, Color dividerColor, List<BoxShadow> boxShadow) {
+  Widget _buildBalanceCard(
+      BuildContext context,
+      Wallet wallet,
+      Color cardBgColor,
+      Color onCardColor,
+      Color subtleOnCardColor,
+      Color buttonBgColor,
+      Color buttonTextColor,
+      Color warningTextColor,
+      Color warningBackgroundColor,
+      Color coinsIconColor,
+      Color bonusCoinsIconColor,
+      Color dividerColor,
+      List<BoxShadow> boxShadow) {
     return Container(
       padding: EdgeInsets.all(responsiveFontSize(context, 20)),
-      decoration: BoxDecoration(color: cardBgColor, borderRadius: BorderRadius.circular(responsiveFontSize(context, 16)), boxShadow: boxShadow),
+      decoration: BoxDecoration(
+          color: cardBgColor,
+          borderRadius: BorderRadius.circular(responsiveFontSize(context, 16)),
+          boxShadow: boxShadow),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -214,59 +270,95 @@ class ProfileScreen extends StatelessWidget {
             children: [
               Text(
                 tl('profile.balance.remainingBalance'),
-                style: AppFonts.titleSmall(color: subtleOnCardColor)?.copyWith(fontWeight: FontWeight.w500),
+                style: AppFonts.titleSmall(color: subtleOnCardColor)
+                    ?.copyWith(fontWeight: FontWeight.w500),
               ),
               ElevatedButton(
                 onPressed: () => print('Top Up tapped'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: buttonBgColor,
                   foregroundColor: buttonTextColor,
-                  padding: EdgeInsets.symmetric(horizontal: responsiveFontSize(context, 20), vertical: responsiveFontSize(context, 10)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(responsiveFontSize(context, 20))),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: responsiveFontSize(context, 20),
+                      vertical: responsiveFontSize(context, 10)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius:
+                      BorderRadius.circular(responsiveFontSize(context, 20))),
                   elevation: 2,
                 ),
-                child: Text(tl('profile.balance.topUpButton'), style: AppFonts.bodySmall(color: buttonTextColor)?.copyWith(fontWeight: FontWeight.w600)),
+                child: Text(tl('profile.balance.topUpButton'),
+                    style: AppFonts.bodySmall(color: buttonTextColor)
+                        ?.copyWith(fontWeight: FontWeight.w600)),
               ),
             ],
           ),
           SizedBox(height: responsiveFontSize(context, 8)),
           InkWell(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CoinDetailsScreen())),
+            onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (context) => const CoinDetailsScreen())),
             borderRadius: BorderRadius.circular(responsiveFontSize(context, 8)),
             child: Padding(
-              padding: EdgeInsets.symmetric(vertical: responsiveFontSize(context, 4.0)),
+              padding:
+              EdgeInsets.symmetric(vertical: responsiveFontSize(context, 4.0)),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('37', style: AppFonts.displayLargeM(color: onCardColor)),
+                  Text(wallet.totalCoins.toString(),
+                      style: AppFonts.displayLargeM(color: onCardColor)),
                   SizedBox(width: responsiveFontSize(context, 4)),
                   Padding(
-                    padding: EdgeInsets.only(top: responsiveFontSize(context, 4)),
-                    child: Icon(Remix.arrow_right_s_line, size: responsiveFontSize(context, 26), color: onCardColor.withOpacity(0.7)),
+                    padding:
+                    EdgeInsets.only(top: responsiveFontSize(context, 4)),
+                    child: Icon(Remix.arrow_right_s_line,
+                        size: responsiveFontSize(context, 26),
+                        color: onCardColor.withOpacity(0.7)),
                   ),
                 ],
               ),
             ),
           ),
           SizedBox(height: responsiveFontSize(context, 18)),
-          Divider(color: dividerColor.withOpacity(0.5), thickness: 0.6, height: 1),
+          Divider(
+              color: dividerColor.withOpacity(0.5), thickness: 0.6, height: 1),
           SizedBox(height: responsiveFontSize(context, 18)),
-          _buildBalanceItem(context, Remix.copper_coin_line, tl('profile.balance.coins'), '0', onCardColor, subtleOnCardColor, coinsIconColor),
+          _buildBalanceItem(
+              context,
+              Remix.copper_coin_line,
+              tl('profile.balance.coins'),
+              wallet.paidCoins.toString(),
+              onCardColor,
+              subtleOnCardColor,
+              coinsIconColor),
           SizedBox(height: responsiveFontSize(context, 14)),
-          _buildBalanceItem(context, Remix.gift_2_line, tl('profile.balance.bonusCoins'), '37', onCardColor, subtleOnCardColor, bonusCoinsIconColor),
+          _buildBalanceItem(
+              context,
+              Remix.gift_2_line,
+              tl('profile.balance.bonusCoins'),
+              wallet.bonusCoins.toString(),
+              onCardColor,
+              subtleOnCardColor,
+              bonusCoinsIconColor),
           SizedBox(height: responsiveFontSize(context, 18)),
           Container(
-            padding: EdgeInsets.symmetric(horizontal: responsiveFontSize(context, 12), vertical: responsiveFontSize(context, 8)),
-            decoration: BoxDecoration(color: warningBackgroundColor, borderRadius: BorderRadius.circular(responsiveFontSize(context, 8))),
+            padding: EdgeInsets.symmetric(
+                horizontal: responsiveFontSize(context, 12),
+                vertical: responsiveFontSize(context, 8)),
+            decoration: BoxDecoration(
+                color: warningBackgroundColor,
+                borderRadius:
+                BorderRadius.circular(responsiveFontSize(context, 8))),
             child: Row(
               children: [
-                Icon(Remix.alarm_warning_fill, color: warningTextColor, size: responsiveFontSize(context, 18)),
+                Icon(Remix.alarm_warning_fill,
+                    color: warningTextColor,
+                    size: responsiveFontSize(context, 18)),
                 SizedBox(width: responsiveFontSize(context, 8)),
                 Expanded(
                   child: Text(
                     tl('profile.balance.bonusCoinsExpirationWarning'),
-                    style: AppFonts.labelSmall(color: warningTextColor)?.copyWith(fontWeight: FontWeight.w500),
+                    style: AppFonts.labelSmall(color: warningTextColor)
+                        ?.copyWith(fontWeight: FontWeight.w500),
                   ),
                 ),
               ],
@@ -277,47 +369,139 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBalanceItem(BuildContext context, IconData icon, String label, String value, Color onCardColor, Color subtleOnCardColor, Color iconColor) {
+  // ✨ PERBAIKAN DI DALAM FUNGSI INI
+  Widget _buildBalanceCardLoading(
+      BuildContext context, Color cardBgColor, List<BoxShadow> boxShadow) {
+    // Gunakan themeProvider.value untuk mendapatkan ThemeMode saat ini
+    final bool isDarkMode = themeProvider.value == ThemeMode.dark;
+
+    return Shimmer.fromColors(
+      baseColor: isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
+      highlightColor: isDarkMode ? Colors.grey[700]! : Colors.grey[100]!,
+      child: Container(
+        padding: EdgeInsets.all(responsiveFontSize(context, 20)),
+        decoration: BoxDecoration(
+            color: cardBgColor,
+            borderRadius: BorderRadius.circular(responsiveFontSize(context, 16)),
+            boxShadow: boxShadow),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(width: 100, height: 20, color: Colors.white),
+                Container(
+                    width: 80,
+                    height: 36,
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20))),
+              ],
+            ),
+            SizedBox(height: responsiveFontSize(context, 8)),
+            Container(width: 80, height: 50, color: Colors.white),
+            SizedBox(height: responsiveFontSize(context, 18)),
+            Divider(color: Colors.white, thickness: 0.6, height: 1),
+            SizedBox(height: responsiveFontSize(context, 18)),
+            Container(width: double.infinity, height: 24, color: Colors.white),
+            SizedBox(height: responsiveFontSize(context, 14)),
+            Container(width: double.infinity, height: 24, color: Colors.white),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBalanceItem(BuildContext context, IconData icon, String label,
+      String value, Color onCardColor, Color subtleOnCardColor, Color iconColor) {
     return Row(
       children: [
         Icon(icon, size: responsiveFontSize(context, 22), color: iconColor),
         SizedBox(width: responsiveFontSize(context, 12)),
         Text(label, style: AppFonts.titleMedium(color: onCardColor)),
         const Spacer(),
-        Text(value, style: AppFonts.titleMedium(color: onCardColor)?.copyWith(fontWeight: FontWeight.w600)),
+        Text(value,
+            style: AppFonts.titleMedium(color: onCardColor)
+                ?.copyWith(fontWeight: FontWeight.w600)),
       ],
     );
   }
 
-  Widget _buildMenuListContainer(BuildContext context, Color onSurfaceColor, Color subtleTextColor, Color accentBadgeColor, Color primaryColor, Color onPrimaryColor, Color menuContainerBgColor, List<BoxShadow> boxShadow, Color dividerColor, bool isLoggedIn) {
+  Widget _buildMenuListContainer(
+      BuildContext context,
+      Color onSurfaceColor,
+      Color subtleTextColor,
+      Color accentBadgeColor,
+      Color primaryColor,
+      Color onPrimaryColor,
+      Color menuContainerBgColor,
+      List<BoxShadow> boxShadow,
+      Color dividerColor,
+      bool isLoggedIn) {
     final AuthRepository authRepository = AuthRepository();
 
     Future<void> handleLogout() async {
       await authRepository.logout();
       authNotifier.value = null;
       Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const WelcomeScreen()), (route) => false);
+          MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+              (route) => false);
     }
 
     return Container(
-      decoration: BoxDecoration(color: menuContainerBgColor, borderRadius: BorderRadius.circular(responsiveFontSize(context, 16)), boxShadow: boxShadow),
+      decoration: BoxDecoration(
+          color: menuContainerBgColor,
+          borderRadius: BorderRadius.circular(responsiveFontSize(context, 16)),
+          boxShadow: boxShadow),
       child: Column(
         children: [
-          _buildMenuListItem(context, Remix.calendar_event_line, tl('eventCenter'), onSurfaceColor, subtleTextColor, dividerColor, trailing: _buildBadge(context, tl('freeCoins'), accentBadgeColor, Colors.white), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const EventCenterScreen()))),
-          _buildMenuListItem(context, Remix.coupon_3_line, tl('myCoupons'), onSurfaceColor, subtleTextColor, dividerColor),
-          _buildMenuListItem(context, Remix.archive_line, tl('myPosts'), onSurfaceColor, subtleTextColor, dividerColor, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const MyPostsScreen()))),
-          _buildMenuListItem(context, Remix.quill_pen_line, tl('becomeAuthor'), onSurfaceColor, subtleTextColor, dividerColor, trailing: _buildBadge(context, tl('new'), primaryColor, onPrimaryColor), onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const BecameAuthorScreen()))),
-          _buildMenuListItem(context, Remix.feedback_line, tl('feedback'), onSurfaceColor, subtleTextColor, dividerColor),
-          _buildMenuListItem(context, Remix.settings_line, tl('settings'), onSurfaceColor, subtleTextColor, dividerColor, isLast: !isLoggedIn, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen()))),
+          _buildMenuListItem(context, Remix.calendar_event_line,
+              tl('eventCenter'), onSurfaceColor, subtleTextColor, dividerColor,
+              trailing: _buildBadge(
+                  context, tl('freeCoins'), accentBadgeColor, Colors.white),
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => const EventCenterScreen()))),
+          _buildMenuListItem(context, Remix.coupon_3_line, tl('myCoupons'),
+              onSurfaceColor, subtleTextColor, dividerColor),
+          _buildMenuListItem(context, Remix.archive_line, tl('myPosts'),
+              onSurfaceColor, subtleTextColor, dividerColor,
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => const MyPostsScreen()))),
+          _buildMenuListItem(context, Remix.quill_pen_line, tl('becomeAuthor'),
+              onSurfaceColor, subtleTextColor, dividerColor,
+              trailing: _buildBadge(
+                  context, tl('new'), primaryColor, onPrimaryColor),
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const BecameAuthorScreen()))),
+          _buildMenuListItem(context, Remix.feedback_line, tl('feedback'),
+              onSurfaceColor, subtleTextColor, dividerColor),
+          _buildMenuListItem(
+              context,
+              Remix.settings_line,
+              tl('settings'),
+              onSurfaceColor,
+              subtleTextColor,
+              dividerColor,
+              isLast: !isLoggedIn,
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (context) => const SettingsScreen()))),
         ],
       ),
     );
   }
 
-  Widget _buildBadge(BuildContext context, String text, Color bgColor, Color textColor) {
+  Widget _buildBadge(
+      BuildContext context, String text, Color bgColor, Color textColor) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: responsiveFontSize(context, 8), vertical: responsiveFontSize(context, 3.5)),
-      decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(responsiveFontSize(context, 10))),
+      padding: EdgeInsets.symmetric(
+          horizontal: responsiveFontSize(context, 8),
+          vertical: responsiveFontSize(context, 3.5)),
+      decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(responsiveFontSize(context, 10))),
       child: Text(
         text,
         style: AppFonts.labelTiny(color: textColor),
@@ -325,24 +509,48 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuListItem(BuildContext context, IconData icon, String title, Color onSurfaceColor, Color subtleTextColor, Color dividerColor, {Widget? trailing, bool isLast = false, VoidCallback? onTap}) {
+  Widget _buildMenuListItem(
+      BuildContext context,
+      IconData icon,
+      String title,
+      Color onSurfaceColor,
+      Color subtleTextColor,
+      Color dividerColor,
+      {Widget? trailing,
+        bool isLast = false,
+        VoidCallback? onTap}) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap ?? () => print('$title tapped - default action'),
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: responsiveFontSize(context, 16), vertical: responsiveFontSize(context, 15)),
-          decoration: BoxDecoration(border: isLast ? null : Border(bottom: BorderSide(color: dividerColor.withOpacity(0.5), width: 0.6))),
+          padding: EdgeInsets.symmetric(
+              horizontal: responsiveFontSize(context, 16),
+              vertical: responsiveFontSize(context, 15)),
+          decoration: BoxDecoration(
+              border: isLast
+                  ? null
+                  : Border(
+                  bottom: BorderSide(
+                      color: dividerColor.withOpacity(0.5), width: 0.6))),
           child: Row(
             children: [
-              Icon(icon, size: responsiveFontSize(context, 22), color: onSurfaceColor),
+              Icon(icon,
+                  size: responsiveFontSize(context, 22),
+                  color: onSurfaceColor),
               SizedBox(width: responsiveFontSize(context, 16)),
               Expanded(
-                child: Text(title, style: AppFonts.titleMedium(color: onSurfaceColor)),
+                child:
+                Text(title, style: AppFonts.titleMedium(color: onSurfaceColor)),
               ),
-              if (trailing != null) ...[trailing, SizedBox(width: responsiveFontSize(context, 8))],
+              if (trailing != null) ...[
+                trailing,
+                SizedBox(width: responsiveFontSize(context, 8))
+              ],
               if (onTap != null)
-                Icon(Remix.arrow_right_s_line, size: responsiveFontSize(context, 20), color: subtleTextColor),
+                Icon(Remix.arrow_right_s_line,
+                    size: responsiveFontSize(context, 20),
+                    color: subtleTextColor),
             ],
           ),
         ),
