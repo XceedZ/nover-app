@@ -24,5 +24,8 @@ class ApiConstants {
   static const String getBooksEndpoint = '/v1/books';
   static String getBookDetailPublic(int bookId) => '/v1/books/$bookId';
   static String getChapterDetail(int chapterId) => '/v1/chapters/$chapterId';
+  static String getBookComments(int bookId) => '/v1/books/$bookId/comments';
+  static String postBookComment(int bookId) => '/v1/books/$bookId/comments';
+  static const String getNotificationsEndpoint = '/v1/notifications';
 
 }

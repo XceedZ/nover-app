@@ -16,6 +16,10 @@ import 'package:nover/src/constants/app_constants.dart';
 import 'package:nover/src/widgets/custom_snackbar.dart'; // <-- IMPORT BARU
 import 'package:nover/src/utils/translation.dart'; // <-- IMPORT BARU untuk tl()
 
+import 'package:package_info_plus/package_info_plus.dart';
+import 'package:nover/features/settings/services/update_service.dart';
+import 'package:nover/features/settings/widgets/update_bottom_sheet.dart';
+
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
@@ -27,10 +31,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
   String _cacheSizeString = "";
   String? _currentLanguageCode;
+  String _appVersion = '';
+  final UpdateService _updateService = UpdateService();
 
   @override
   void initState() {
     super.initState();
+    _getAppVersion(); // Panggil method untuk dapatkan versi app
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         var delegate = LocalizedApp.of(context).delegate;
@@ -42,6 +49,57 @@ class _SettingsScreenState extends State<SettingsScreen> {
       }
     });
   }
+
+  Future<void> _getAppVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    if(mounted) {
+      setState(() {
+         _appVersion = 'v${packageInfo.version}';
+      });
+    }
+  }
+
+  Future<void> _handleCheckForUpdate() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final updateInfo = await _updateService.checkForUpdate();
+      if(mounted) Navigator.pop(context); // Tutup loading
+
+      if (updateInfo != null) {
+        // Ada update, tampilkan dialog
+        showModalBottomSheet(
+          context: context,
+          isScrollControlled: true,
+          backgroundColor: Colors.transparent, // Penting agar background container bisa melengkung
+          builder: (context) => UpdateAvailableBottomSheet(updateInfo: updateInfo),
+        );
+      } else {
+        // Tidak ada update, gunakan AppSnackbar
+                if(mounted) {
+                  AppSnackbar.showSuccess(
+                    context,
+                    title: tl('label.noUpdateTitle'),
+                    message: tl('label.noUpdateMessage'),
+                  );
+                }
+              }
+            } catch (e) {
+              if(mounted) Navigator.pop(context); // Tutup loading
+              // Gunakan AppSnackbar untuk error
+              if(mounted) {
+                AppSnackbar.showError(
+                  context,
+                  title: tl('error.genericTitle'),
+                  message: tl('label.checkFailed'),
+                );
+              }
+            }
+          }
 
   Future<void> _calculateCacheSize() async {
     if (!mounted) return;
@@ -346,8 +404,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   titleKey: 'settings.languageOptions.aboutUs',
                   iconColor: defaultSettingsIconColor,
                   onTap: () { print('About Us Tapped'); },
-                  isLastItemInGroup: true,
+                  isLastItemInGroup: !Platform.isAndroid,
                 ),
+                // Tambahkan item cek pembaruan di sini
+                if (Platform.isAndroid)
+                  _buildSettingsItem(
+                    context,
+                    icon: Remix.loop_right_line,
+                    titleKey: 'label.checkForUpdate',
+                    iconColor: defaultSettingsIconColor,
+                    onTap: _handleCheckForUpdate,
+                    isLastItemInGroup: true,
+                    trailing: Text(
+                      _appVersion,
+                      style: AppFonts.titleSmall(color: subtleTextColor),
+                    ),
+                  ),
               ]
           ),
           SizedBox(height: responsiveFontSize(context, 30)),

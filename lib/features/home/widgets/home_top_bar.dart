@@ -24,7 +24,7 @@ class _HomeTopBarState extends State<HomeTopBar> {
   Widget build(BuildContext context) {
     ThemeData theme = Theme.of(context);
     ColorScheme colorScheme = theme.colorScheme;
-    AppBarTheme appBarTheme = theme.appBarTheme;
+    final appBarTheme = theme.appBarTheme;
 
     Color appBarBackgroundColor = appBarTheme.backgroundColor ?? colorScheme.surface;
     Color iconColor = appBarTheme.foregroundColor ?? colorScheme.onSurface;

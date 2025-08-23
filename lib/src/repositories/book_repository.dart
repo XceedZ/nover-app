@@ -9,6 +9,7 @@ import 'package:nover/src/utils/translation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:nover/src/models/chapter.dart'; // Pastikan import ini ada
 import 'dart:developer' as developer;
+import 'package:nover/src/models/book_comment.dart'; // ✨ Impor model baru
 
 class BookRepository {
   final ApiService _apiService = ApiService();
@@ -228,6 +229,76 @@ class BookRepository {
     } catch (e) {
       developer.log('Error tak terduga saat mengambil detail chapter: $e', name: 'BookRepository');
       throw Exception('Terjadi kesalahan tidak terduga.');
+    }
+  }
+
+  Future<void> postReview({
+    required int bookId,
+    required String reviewText,
+    required double rating, // <-- TAMBAHKAN PARAMETER RATING
+    int? parentId,
+  }) async {
+    // Tunda eksekusi untuk simulasi
+    await Future.delayed(const Duration(seconds: 1));
+
+    // Cetak ke konsol untuk debugging
+    developer.log(
+      'Fungsi postReview dipanggil untuk bookId: $bookId, rating: $rating, teks: "$reviewText"',
+      name: 'BookRepository',
+    );
+
+    // Nanti di sini Anda akan menambahkan logika untuk mengirim data ke API
+    // Contoh:
+    // final requestBody = {
+    //   "reviewText": reviewText,
+    //   "rating": rating,
+    //   "parentId": parentId,
+    // };
+    // await _apiService.post(ApiConstants.postReview(bookId), data: requestBody);
+
+    return;
+  }
+
+  Future<List<BookComment>> getBookComments(int bookId) async {
+    try {
+      final endpoint = ApiConstants.getBookComments(bookId);
+      final response = await _apiService.get(endpoint);
+
+      if (response.statusCode == 200 && response.data['comments'] is List) {
+        final List<dynamic> commentData = response.data['comments'];
+        return commentData.map((json) => BookComment.fromJson(json)).toList();
+      } else {
+        throw Exception('Gagal memuat komentar.');
+      }
+    } on DioException {
+      throw Exception('Gagal terhubung ke server.');
+    } catch (e) {
+      developer.log('Error tak terduga saat mengambil komentar: $e', name: 'BookRepository');
+      throw Exception('Terjadi kesalahan tidak terduga.');
+    }
+  }
+
+  // --- FUNGSI BARU UNTUK MENGIRIM KOMENTAR BUKU ---
+  Future<void> postBookComment({
+    required int bookId,
+    required String commentText,
+    int? parentId,
+  }) async {
+    try {
+      final requestBody = {
+        "commentText": commentText,
+        if (parentId != null) "parentCommentId": parentId,
+      };
+
+      final endpoint = ApiConstants.postBookComment(bookId);
+      await _apiService.post(endpoint, data: requestBody);
+
+    } on DioException catch (e) {
+      developer.log('DioException saat mengirim komentar: ${e.response?.data}', name: 'BookRepository');
+      throw te('unknownApi');
+    } catch (e) {
+      developer.log('Error tak terduga saat mengirim komentar: $e', name: 'BookRepository');
+      throw te('unexpected');
     }
   }
 }

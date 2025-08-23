@@ -23,6 +23,8 @@ import 'package:nover/main.dart';
 import 'package:nover/src/utils/translation.dart';
 import 'package:nover/features/author/screens/author_profile_screen.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
+import 'package:nover/features/books/screens/comments_screen.dart';
+import 'package:animations/animations.dart';
 
 class BookDetailScreen extends StatefulWidget {
   final int bookId;
@@ -234,6 +236,8 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
   }
 
   Widget _buildUI(BuildContext context, Book book, AuthorInfo? author, List<Chapter> chapters, List<Review> reviews, {bool isLoading = false}) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final screenHeight = MediaQuery.of(context).size.height;
     final statusBarPadding = MediaQuery.of(context).padding.top;
     final topBarHeight = kToolbarHeight + statusBarPadding;
@@ -246,10 +250,6 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
 
     final bool skipHeroAnimations = lowPerformanceModeProvider.value;
 
-    final double bottomSafePadding = MediaQuery.of(context).padding.bottom;
-    final double calculatedHeightOfBottomActionButtons = responsiveFontSize(context, 52.0) + (bottomSafePadding > 0 ? bottomSafePadding + 12 : 24);
-    final double totalBottomPaddingForScrollView = calculatedHeightOfBottomActionButtons + 6.0;
-
     Widget bookCoverImage = ClipRRect(
       borderRadius: BorderRadius.circular(detailImageClipRadius),
       child: CachedNetworkImage(
@@ -260,90 +260,101 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     );
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.background,
+      backgroundColor: theme.colorScheme.background,
+      bottomNavigationBar: _buildBottomActionButtons(context, chapters),
+      floatingActionButton: OpenContainer(
+        transitionDuration: const Duration(milliseconds: 400),
+        closedShape: const CircleBorder(),
+        closedColor: colorScheme.primary,
+        closedElevation: 6.0,
+        openBuilder: (context, _) => CommentsScreen(bookId: book.bookId),
+        closedBuilder: (context, openContainer) {
+          return FloatingActionButton(
+            onPressed: openContainer,
+            backgroundColor: colorScheme.primary,
+            foregroundColor: colorScheme.onPrimary,
+            tooltip: 'Lihat Komentar',
+            child: const Icon(Remix.chat_3_line),
+          );
+        },
+      ),
       body: Stack(
         children: [
           Positioned.fill(
-            child: Padding(
-              padding: EdgeInsets.only(bottom: totalBottomPaddingForScrollView),
-              child: CustomScrollView(
-                controller: _scrollController,
-                slivers: <Widget>[
-                  SliverToBoxAdapter(child: SizedBox(height: topBarHeight)),
-                  SliverToBoxAdapter(
-                    child: SizedBox(
-                      height: sliver1CombinedHeight,
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        alignment: Alignment.topCenter,
-                        children: [
-                          Positioned(
-                            top: 0, left: 0, right: 0,
-                            child: Container(
-                              height: localSliverColoredHeaderHeight,
-                              decoration: BoxDecoration(
-                                color: _dynamicHeaderColor,
-                                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(30)),
-                              ),
+            child: CustomScrollView(
+              controller: _scrollController,
+              slivers: <Widget>[
+                SliverToBoxAdapter(child: SizedBox(height: topBarHeight)),
+                SliverToBoxAdapter(
+                  child: SizedBox(
+                    height: sliver1CombinedHeight,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      alignment: Alignment.topCenter,
+                      children: [
+                        Positioned(
+                          top: 0, left: 0, right: 0,
+                          child: Container(
+                            height: localSliverColoredHeaderHeight,
+                            decoration: BoxDecoration(
+                              color: _dynamicHeaderColor,
+                              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(30)),
                             ),
                           ),
-                          Positioned(
-                            top: localSliverColoredHeaderHeight - (localSliverBookCoverHeight * 0.75),
-                            child: Container(
-                              height: localSliverBookCoverHeight,
-                              width: localSliverBookCoverWidth,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(detailShadowContainerRadius),
-                                boxShadow: const [
-                                  BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.25), blurRadius: 15, offset: Offset(0, 8)),
-                                ],
-                              ),
-                              child: skipHeroAnimations
-                                  ? bookCoverImage
-                                  : Hero(tag: 'bookCover_${book.bookId}', child: bookCoverImage),
+                        ),
+                        Positioned(
+                          top: localSliverColoredHeaderHeight - (localSliverBookCoverHeight * 0.75),
+                          child: Container(
+                            height: localSliverBookCoverHeight,
+                            width: localSliverBookCoverWidth,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(detailShadowContainerRadius),
+                              boxShadow: const [
+                                BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.25), blurRadius: 15, offset: Offset(0, 8)),
+                              ],
                             ),
+                            child: skipHeroAnimations
+                                ? bookCoverImage
+                                : Hero(tag: 'bookCover_${book.bookId}', child: bookCoverImage),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                  SliverToBoxAdapter(
-                    child: Container(
-                      transform: Matrix4.translationValues(0, -sliverBookCoverOverlap, 0),
-                      padding: EdgeInsets.only(
-                        top: sliverBookCoverOverlap + responsiveFontSize(context, -20),
-                        left: responsiveFontSize(context, 24),
-                        right: responsiveFontSize(context, 24),
-                      ),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.background,
-                        borderRadius: const BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          _buildInfoSection(context, book, author, chapters.length),
-                          const SizedBox(height: 28),
-                          _buildGenreAndSynopsisSection(context, book),
-                          const SizedBox(height: 28),
-                          if(author != null)
-                            _buildChaptersCard(context, book, author, chapters),
-                          const SizedBox(height: 28),
-                          _buildReviewsCard(context, reviews),
-                          const SizedBox(height: 28),
-                          _buildRecommendationsSection(context, _recommendedBooks, skipHeroAnimations),
-                          if (isLoading)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 32.0),
-                              child: Center(child: LoadingAnimationWidget.staggeredDotsWave(color: Theme.of(context).colorScheme.primary, size: 40)),
-                            ),
-                          const SizedBox(height: 20),
-                        ],
-                      ),
+                ),
+                SliverToBoxAdapter(
+                  child: Container(
+                    transform: Matrix4.translationValues(0, -sliverBookCoverOverlap, 0),
+                    padding: EdgeInsets.only(
+                      top: sliverBookCoverOverlap + responsiveFontSize(context, -20),
+                      left: responsiveFontSize(context, 24),
+                      right: responsiveFontSize(context, 24),
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.background,
+                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        _buildInfoSection(context, book, author, chapters.length),
+                        const SizedBox(height: 28),
+                        _buildGenreAndSynopsisSection(context, book),
+                        const SizedBox(height: 28),
+                        if(author != null)
+                          _buildChaptersCard(context, book, author, chapters),
+                        const SizedBox(height: 28),
+                        _buildRecommendationsSection(context, _recommendedBooks, skipHeroAnimations),
+                        if (isLoading)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 32.0),
+                            child: Center(child: LoadingAnimationWidget.staggeredDotsWave(color: Theme.of(context).colorScheme.primary, size: 40)),
+                          ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           Positioned(
@@ -359,11 +370,6 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
               bookAuthor: author?.penName ?? author?.fullName,
               showTitleAuthor: _showTopBarTitleAndAuthor,
             ),
-          ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            // FIX: Kirim 'chapters' ke method
-            child: _buildBottomActionButtons(context, chapters),
           ),
         ],
       ),
@@ -423,6 +429,13 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       decoration: BoxDecoration(
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+              color: theme.shadowColor.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 4)
+          )
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -538,17 +551,13 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Text(
-                // Judul diubah menjadi "Comments (count)"
                 'Comments (${reviews.length})',
                 style: AppFonts.titleLarge(color: theme.textTheme.titleLarge?.color)
                     ?.copyWith(fontWeight: FontWeight.bold),
               ),
-              // "View all" hanya tampil jika ada review
               if (reviews.isNotEmpty)
                 TextButton(
-                  onPressed: () {
-                    // TODO: Implementasi untuk melihat semua review
-                  },
+                  onPressed: () {},
                   child: Text(
                     'View all',
                     style: AppFonts.titleSmall(color: colorScheme.primary)
@@ -558,13 +567,9 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
             ],
           ),
           const SizedBox(height: 16),
-
-          // Menampilkan tampilan berbeda jika review kosong atau terisi
           if (reviews.isEmpty)
-          // Tampilan saat tidak ada komentar (sesuai gambar)
             Column(
               children: [
-                // Ilustrasi placeholder, Anda bisa menggantinya dengan aset SVG/Gambar kustom
                 Icon(Remix.chat_smile_2_line, size: 80, color: Colors.grey.shade300),
                 const SizedBox(height: 16),
                 Text(
@@ -572,13 +577,12 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                   style: AppFonts.titleMedium(color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 24),
-                // Input field untuk komentar baru
                 TextField(
                   decoration: InputDecoration(
                     hintText: 'Say something...',
                     hintStyle: AppFonts.bodyMedium(color: Colors.grey[500]),
                     filled: true,
-                    fillColor: theme.scaffoldBackgroundColor, // Warna latar field
+                    fillColor: theme.scaffoldBackgroundColor,
                     contentPadding: const EdgeInsets.only(left: 20, top: 14, bottom: 14, right: 10),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
@@ -587,9 +591,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
                     suffixIcon: Padding(
                       padding: const EdgeInsets.all(4.0),
                       child: GestureDetector(
-                        onTap: () {
-                          // TODO: Implementasi logika kirim komentar
-                        },
+                        onTap: () {},
                         child: CircleAvatar(
                           radius: 20,
                           backgroundColor: colorScheme.primary,
@@ -602,8 +604,6 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
               ],
             )
           else
-          // TODO: Tampilkan daftar review yang ada di sini
-          // Contoh:
             ListView.builder(
               padding: EdgeInsets.zero,
               shrinkWrap: true,
@@ -611,9 +611,7 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
               itemCount: reviews.length,
               itemBuilder: (context, index) {
                 final review = reviews[index];
-                // Ganti dengan widget item review kustom Anda
                 return ListTile(
-                  // title: Text(review.userName),
                   subtitle: Text(review.reviewText),
                 );
               },
@@ -623,8 +621,6 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
     );
   }
 
-
-  // FIX: Terima 'chapters' untuk mendapatkan chapter pertama
   Widget _buildBottomActionButtons(BuildContext context, List<Chapter> chapters) {
     ThemeData theme = Theme.of(context);
 
@@ -649,19 +645,17 @@ class _BookDetailScreenState extends State<BookDetailScreen> {
       ),
     );
 
-    // FIX: Logika untuk tombol "Continue Reading"
     final bool hasChapters = chapters.isNotEmpty;
     final Chapter? firstChapter = hasChapters ? chapters.first : null;
 
     Widget continueReadingButton = Expanded(
       child: ElevatedButton(
-        onPressed: () {
-          // FIX: Langsung buka ReadChapterScreen dengan firstChapter
+        onPressed: hasChapters ? () {
           Navigator.push(context, MaterialPageRoute(builder: (context) => ReadChapterScreen(
             chapterId: firstChapter!.chapterId,
             initialTitle: firstChapter.title,
           )));
-        },
+        } : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: theme.colorScheme.primary,
           foregroundColor: theme.colorScheme.onPrimary,
@@ -739,7 +733,6 @@ class _ChapterListItem extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     return ListTile(
       onTap: () {
-        // FIX: Panggil ReadChapterScreen, bukan ReadNovelScreen
         Navigator.push(
           context,
           MaterialPageRoute(

@@ -8,4 +8,5 @@ class AppConstants {
   static const String themePrefKey = 'app_theme_mode';
   static const String languagePrefKey = 'app_language_code';
   static const String lowPerformanceModePrefKey = 'app_low_performance_mode';
+  static const String updateJsonUrl = 'https://drive.google.com/uc?export=download&id=1o2kNQ5S4zTydF58yS1LBvc95K73kwJkP';
 }

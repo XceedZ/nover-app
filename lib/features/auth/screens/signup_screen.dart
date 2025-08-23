@@ -52,8 +52,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         // UBAH: Menggunakan AppSnackbar
         AppSnackbar.showSuccess(
           context,
-          title: tl('signupSuccessTitle'),
-          message: tl('signupSuccessSubtitle'),
+          title: tl('success'),
+          message: tl('signupSuccess'),
         );
 
         Future.delayed(const Duration(seconds: 2), () {
